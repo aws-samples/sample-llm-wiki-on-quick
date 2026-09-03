@@ -23,41 +23,25 @@ mcp/wiki-inspect/import-wiki-inspect.json
 
 #### ⚠️ 一个文件只能放一个 server
 
-**Quick 的导入器只读 `mcpServers` 里的第一个 key，其余全部丢掉。** 从 app 代码里挖出来的逻辑：
-
-```js
-if (t.mcpServers && typeof t.mcpServers === "object") {
-    let e = Object.keys(t.mcpServers);
-    if (e.length === 0) { Ui("No servers found in mcpServers"); return }
-    i = e[0],                    // ← 只取第一个 key
-    r = t.mcpServers[i]          // ← 只导入第一个 server
-}
-```
+**Quick 的导入器只读 `mcpServers` 里的第一个条目，其余会被静默丢弃。**
 
 所以如果你的文件里有两项：
 
 ```json
 {
   "mcpServers": {
-    "run":          { ... },     ← 只有这个被导入
-    "wiki-inspect": { ... }      ← 静默丢弃
+    "run":          { ... },
+    "wiki-inspect": { ... }
   }
 }
 ```
 
 导入会「成功」，但进去的是 `run`，`wiki-inspect` 根本没进 —— **看起来像失败，实际是导错了对象。**
-这就是为什么本目录把它们拆成了两个文件：
-
-| 文件 | 内容 |
-|---|---|
-| `import-wiki-inspect.json` | 只有 `wiki-inspect` ← **用这个** |
-| `import-run.json` | 只有 `run`（可选，不是本方案依赖） |
-
-要装多个 server 就**分多次导入**，一次一个文件。
+本目录只提供单 server 的 `import-wiki-inspect.json`，要装多个就分多次导入。
 
 #### 导入器认哪些字段
 
-从代码确认：`name`、`description`、`command`、`args`、`url`、`headers`、`env`。
+`name`、`description`、`command`、`args`、`url`、`headers`、`env`。
 
 `mcpServers` 的 key 会被当成 server 名字（代码里 `name: i || e.name`），
 所以带 `mcpServers` 包装比裸的单 server 定义更明确 —— 名字不用另外填。

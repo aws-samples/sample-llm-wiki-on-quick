@@ -5,7 +5,7 @@ description: >
   Load this when doing anything on the Quick-hosted wiki: ingest 素材、查询问答、跑 Lint 体检、
   灌 wikilink 边、配置文件夹索引、rebuild 后校正、诊断图谱漂移。
   与 wiki-ops 的区别：那个管 Obsidian + markdown-vault + S3 那套；**这个管 Quick 桌面端**
-  （kg_* 工具族 / file_rag_search / run_python / SQLite 直读校验）。
+  （kg_* 工具族 / file_rag_search / run_python / 只读校验层）。
   触发词：Quick wiki、Wiki-Vault、kg_add、kg_search、file_rag_search、quick lint、灌边、
   抽取管线、kg_folder_rebuild。
 ---
@@ -41,7 +41,7 @@ markdown 文件在 `~/Wiki-Vault` → Quick 桌面端建两套索引（全文 + 
 **KG 一列不勾**，原因见「为什么不用自动抽取」。三条约束：
 
 - 顺序：先注册根（全关）→ 再加子目录。反过来会被拒（`Cannot enable indexing: subfolder X is already indexed`）
-- Semantic 是 Keyword 的升级档（内部 `embed_mode`: `fts_only` → `full`），不能单独开
+- Semantic 是 Keyword 的升级档，不能单独开 —— 勾它前必须先勾 Keyword
 - Agent access 是索引前置条件，索引开着时它锁死不让关
 
 ## 工具分工（别混用）
@@ -53,32 +53,15 @@ markdown 文件在 `~/Wiki-Vault` → Quick 桌面端建两套索引（全文 + 
 | 查反向链接 | 全文检索 `[[X]]` 字面量 | `kg_search` 的 edges 有 **3 条上限**，枢纽页会被截断 |
 | 灌边 / 建节点 | `kg_add(from_id, to_id)` | 名字解析是模糊的，必须用 id |
 | 批量解析 + 比对 | `run_python(code, tools=[...])` | 不传 `tools` 这些函数不在命名空间，报 `NameError` |
-| 全量边 / 索引时间戳 | 直读 SQLite（见下） | 前两项 MCP 工具拿不到 |
+| 全量边 / 索引时间戳 | `wiki-inspect` MCP 或 lint 脚本 | 内置工具拿不到 |
 
-## 直读 SQLite（校验用，只读）
+## 校验数据从哪来
 
-```bash
-DB=~/.quickwork/profiles/*/knowledge_storage/knowledge_v1.db
-```
+`quick_wiki_lint.py` 和 `wiki-inspect` MCP 都以**只读方式**读取 Quick 的本地索引状态，
+用来比对「vault 里的 markdown 文件」和「Quick 记录的状态」是否一致。
 
-**profile 有多个**，先确认哪个是当前登录的（`folders` 表里有 `~/Wiki-Vault` 的那个）。
-
-```sql
--- 文件夹配置与索引状态
-SELECT id,path,agent_allowed,rag_enabled,embed_mode,kg_enabled,rag_status,kg_status FROM folders;
-
--- 索引时效（比 modified_at 旧 = 改动没进索引）
-SELECT name, rag_index_time IS NOT NULL, kg_index_time IS NOT NULL, modified_at FROM files;
-
--- 全量边，不受 3 条上限
-SELECT relation, source, COUNT(*) FROM edges GROUP BY relation, source;
-
--- 实体名（search_content 存 name + 空格 + summary 拼接）
-SELECT n.id, n.category, s.text_content FROM nodes n
-  JOIN search_content s ON s.node=n.id WHERE n.node_class='entity';
-```
-
-**⚠️ 永远只读。** 直写会绕过 Quick 的索引更新、`content_hash` 校验和 token 计量。
+**⚠️ 只读。** 不要尝试写入 —— 那会绕过 Quick 自己的索引更新和计量，让状态不一致。
+写操作一律走 `kg_add` / `kg_edit` / `file_write`。
 
 ## LINT — 说「lint」「体检」时跑
 
@@ -153,12 +136,12 @@ summary 也已写好。发现能力用在这里就是过度发现。
 `special_instructions` 是**软约束**，抽取器不保证遵守 —— 加规则能把碎片从 35 压到个位数，
 但压不干净。**不能靠「把规则写得更严」解决，因为出问题的正是规则本身没被遵守。**
 
-**关掉 KG 不影响已有的图**：`kg_enabled` 是写入侧门禁，图谱面板走 `GET /graph/data`
-全库端点、不按文件夹开关过滤。实测 `1 → 0` 前后节点/边数一个没动。
+**关掉 KG 不影响已有的图** —— 那个开关只管「扫描时要不要自动抽取」，
+图谱面板读的是全库数据。实测开关 `1 → 0` 前后节点/边数一个没动。
 
 ## rebuild 后必须校正（只在确实要跑抽取时）
 
-`kg_folder_rebuild` 先删光该文件夹的实体再重抽，而 `edges` 外键是 `ON DELETE CASCADE`
+`kg_folder_rebuild` 先删光该文件夹的实体再重抽，而边会随节点级联删除
 —— **节点一删，agent 灌的边全没**。所以：
 
 ```
@@ -187,7 +170,7 @@ rebuild 之后：
   `Source` / `Synthesis`）—— `kg_search(category=...)` 过滤靠它
 - **索引不是实时的** —— 按 `Scan interval` 定时扫描（默认 30 分钟）。所以写页后要
   显式触发索引，别等
-- **`kg_search` 的 edges 有 3 条上限** —— 数边要逐页查，或直读 SQLite
+- **`kg_search` 的 edges 有 3 条上限** —— 数边要逐页查，或用 `wiki_edges()`
 
 ## 三个操作的边界（详见 AGENTS.md）
 

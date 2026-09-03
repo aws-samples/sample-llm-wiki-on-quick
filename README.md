@@ -58,7 +58,7 @@ cp -R llm-wiki-on-quick/scaffold/ ~/Wiki-Vault/
 三条约束：
 
 - **根目录索引全关**，只要 Agent access —— 它给 agent 读写整棵树的权限
-- **Semantic 是 Keyword 的升级档**，不能单独开（内部 `embed_mode`: `fts_only` → `full`）
+- **Semantic 是 Keyword 的升级档**，不能单独开 —— 勾 Semantic 前必须先勾 Keyword
 - **KG 不勾** —— 知识图谱**要用**，但不靠自动抽取，由 agent 用 `kg_add` 显式灌。
   原因见 [docs/why-not-kg-extraction.md](docs/why-not-kg-extraction.md)（含三组实测对照）
 
@@ -170,14 +170,14 @@ run_python(
 
 | 缺口 | agent 的实际表现 | MCP 工具 |
 |---|---|---|
-| 边的 `properties` | 试了 `kg_expand` 各种 id 格式全失败，诚实标「查不了」 | `wiki_edges()` |
-| `files` 表的索引时间戳 | 误报「语义索引卡了 14.5 小时」 | `wiki_index_status()` |
+| 边的元数据 | 读不到，只能标「查不了」 | `wiki_edges()` |
+| 索引时间戳 | 读不到，误报过索引卡住 | `wiki_index_status()` |
 | `kg_search` 的 3 条边上限 | 枢纽页被截断 | `wiki_edges("Agent Card")` 拿到全部 8 条 |
 
 实测收益：token 从约 7900 降到 2080（只算中间过程 6700 → 880），耗时 14 ms。
 
-**内省层坚持只读** —— 直写 Quick 的 SQLite 会绕过索引更新、`content_hash` 校验和
-token 计量。写操作仍然走 `kg_add` / `file_write`。
+**内省层坚持只读** —— 校验只读取状态，从不写入。写操作一律走 `kg_add` / `file_write`，
+让 Quick 自己维护索引和计量。
 
 ## 实测数据
 
