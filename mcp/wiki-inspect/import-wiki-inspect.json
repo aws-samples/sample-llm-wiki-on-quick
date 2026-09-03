@@ -10,7 +10,6 @@
         "~/.quickwork/mcp-servers/wiki-inspect/server.py"
       ],
       "env": {
-        "UV_DEFAULT_INDEX": "https://mirrors.aliyun.com/pypi/simple/",
         "UV_HTTP_TIMEOUT": "120"
       }
     }

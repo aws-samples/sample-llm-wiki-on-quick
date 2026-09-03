@@ -3,13 +3,13 @@
 
 给 Quick 里的 agent 提供它自己做不到或容易做错的检查：
 
-- agent 用 kg_search 读不到边的 properties（试过 kg_expand 各种 id 格式都不行）
-- agent 读不到 files 表的索引时间戳，无法判断索引是否滞后
+- agent 用 kg_search 读不到边的元数据
+- agent 读不到索引时间戳，无法判断索引是否滞后
 - agent 现场写校验代码会出错（实测把方向字段判成 "out"，实际是 "outgoing"，
   误报「图谱 0 条边、严重漂移」）
 
-所有工具都是**只读**的 —— 直写 Quick 的 SQLite 会绕过索引更新、content_hash
-校验和 token 计量。写操作仍然走 kg_add / kg_edit / file_write。
+所有工具都是**只读**的 —— 绕过 Quick 自己写入会让索引和计量不一致。
+写操作仍然走 kg_add / kg_edit / file_write。
 """
 
 from __future__ import annotations
@@ -56,6 +56,15 @@ def _parse_links(text: str) -> list[str]:
     return [m.rstrip("\\").strip() for m in WIKILINK_RE.findall(text)]
 
 
+def _within(registered: str, vault: Path) -> bool:
+    """注册路径是否等于 vault 或落在 vault 之内。"""
+    try:
+        rp = Path(os.path.expanduser(registered)).resolve()
+    except (OSError, ValueError):
+        return False
+    return rp == vault or vault in rp.parents
+
+
 def _find_db(vault: Path) -> Optional[Path]:
     """找到注册了这个 vault 的 profile 库（可能有多个 profile）。"""
     pattern = os.path.expanduser(
@@ -63,11 +72,11 @@ def _find_db(vault: Path) -> Optional[Path]:
     for path in sorted(glob.glob(pattern)):
         try:
             conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-            hit = conn.execute(
-                "SELECT 1 FROM folders WHERE path LIKE ? LIMIT 1",
-                (f"{vault}%",)).fetchone()
+            rows = conn.execute("SELECT path FROM folders").fetchall()
             conn.close()
-            if hit:
+            # 要求 vault 自身或其子目录被注册过 —— 不接受「vault 是注册路径的
+            # 父目录」这种关系，否则 vault="/" 对任何注册路径都成立
+            if any(_within(r[0], vault) for r in rows):
                 return Path(path)
         except sqlite3.Error:
             continue
@@ -127,7 +136,20 @@ def _entity_name(text_content: str, known: set[str]) -> str:
 
 
 def _resolve(vault_path: str) -> tuple[Path, Optional[Path]]:
+    """展开并校验 vault 路径。
+
+    `vault` 参数由调用方（agent）填，而 agent 的输入可能来自 raw/ 里的
+    不可信素材 —— 所以不能直接拿去读盘。两道闸：
+
+    1. 必须是 Quick 里**注册过的文件夹**本身（不是它的父目录）。
+       `path LIKE '<vault>%'` 单独用是不够的：`vault="/"` 能匹配任何注册路径。
+    2. 必须有 wiki/ 子目录 —— 挡掉指向注册树之外的路径。
+
+    过不了闸就返回 db=None，工具统一回「找不到注册了此 vault 的库」。
+    """
     vault = Path(os.path.expanduser(vault_path)).resolve()
+    if not (vault / "wiki").is_dir():
+        return vault, None
     return vault, _find_db(vault)
 
 

@@ -93,13 +93,13 @@ cp server.py ~/.quickwork/mcp-servers/wiki-inspect/
   "args": ["run", "--with", "fastmcp",
            "~/.quickwork/mcp-servers/wiki-inspect/server.py"],
   "env": {
-    "UV_DEFAULT_INDEX": "https://mirrors.aliyun.com/pypi/simple/",
     "UV_HTTP_TIMEOUT": "120"
   }
 }
 ```
 
-`UV_DEFAULT_INDEX` 是国内镜像，网络没问题的话可以去掉。profile 目录名形如
+国内网络装 `fastmcp` 慢的话，可以在 `env` 里加一个 `UV_DEFAULT_INDEX`
+指向你信任的 pip 镜像。profile 目录名形如
 `enterprise-xxxxxxxx-us-west-2`，看 `~/.quickwork/profiles/` 下哪个含你的 vault
 注册记录（`folders` 表里有 `~/Wiki-Vault`）。
 
@@ -146,3 +146,20 @@ agent 只需要一句结论。所以设计成「结论 + 按需展开」：`brie
 
 校验逻辑同源（`quick_wiki_lint.py` 和 `server.py` 里的检查项一致），
 所以两边跑出来的结果应该相同 —— 不同就说明有一边的实现漂了。
+
+## 安全边界
+
+四个工具的设计约束，装之前值得知道：
+
+| | |
+|---|---|
+| **只读** | 数据库一律以 `mode=ro` 打开，没有任何 `INSERT` / `UPDATE` / `DELETE`。写操作走 `kg_add` / `kg_edit` / `file_write`，让 Quick 维护索引和计量 |
+| **不执行、不联网** | 无 `eval` / `exec` / `subprocess`，不发任何网络请求。只读本地文件和本地索引 |
+| **SQL 全参数化** | 没有一处把变量拼进 SQL 字符串 |
+| **`vault` 参数有闸** | 必须存在 `wiki/` 子目录、且该目录（或其子目录）在 Quick 里注册过。否则拒绝 |
+
+最后一条是特意加的。`vault` 由 agent 填，而 agent 的输入可能来自 `raw/` 里的
+**不可信素材** —— 如果不校验，一段藏在素材里的指令就能让工具去读 vault 之外的
+目录并把内容回传。两道闸把可达范围锁在注册过的 vault 内。
+
+（`rglob` 默认不跟随符号链接目录，所以 `wiki/` 里放一个指向 `/etc` 的软链也扫不出东西。）

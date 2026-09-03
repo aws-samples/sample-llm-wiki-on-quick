@@ -177,7 +177,9 @@ run_python(
 实测收益：token 从约 7900 降到 2080（只算中间过程 6700 → 880），耗时 14 ms。
 
 **内省层坚持只读** —— 校验只读取状态，从不写入。写操作一律走 `kg_add` / `file_write`，
-让 Quick 自己维护索引和计量。
+让 Quick 自己维护索引和计量。四个工具不执行外部命令、不联网、SQL 全参数化，
+`vault` 参数限定在注册过的目录内 —— 详见
+[mcp/wiki-inspect/TOOLS.md](mcp/wiki-inspect/TOOLS.md#安全边界)。
 
 ## 实测数据
 

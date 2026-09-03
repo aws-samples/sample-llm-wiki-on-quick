@@ -54,19 +54,29 @@ def parse_links(text: str) -> list[str]:
 
 # ---------- 数据采集 ----------
 
+def within(registered: str, vault: Path) -> bool:
+    """注册路径是否等于 vault 或落在 vault 之内。"""
+    try:
+        rp = Path(os.path.expanduser(registered)).resolve()
+    except (OSError, ValueError):
+        return False
+    return rp == vault or vault in rp.parents
+
+
 def find_db(vault: Path) -> Path | None:
-    """找到注册了这个 vault 的 profile 库。多 profile 时按 folders 表内容判定。"""
+    """找到注册了这个 vault 的 profile 库。多 profile 时按注册路径判定。
+
+    只认「vault 自身或其子目录被注册过」。用 `LIKE '<vault>%'` 是不够的 ——
+    `--vault /` 会匹配到任何注册路径，挑出一个不相干的库。
+    """
     pattern = os.path.expanduser(
         "~/.quickwork/profiles/*/knowledge_storage/knowledge_v1.db")
     for path in sorted(glob.glob(pattern)):
         try:
             conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-            hit = conn.execute(
-                "SELECT 1 FROM folders WHERE path LIKE ? LIMIT 1",
-                (f"{vault}%",),
-            ).fetchone()
+            rows = conn.execute("SELECT path FROM folders").fetchall()
             conn.close()
-            if hit:
+            if any(within(r[0], vault) for r in rows):
                 return Path(path)
         except sqlite3.Error:
             continue

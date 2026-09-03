@@ -101,7 +101,6 @@ JSON 的规则：**项与项之间要有逗号，最后一项后面不能有逗�
         "~/.quickwork/mcp-servers/wiki-inspect/server.py"
       ],
       "env": {
-        "UV_DEFAULT_INDEX": "https://mirrors.aliyun.com/pypi/simple/",
         "UV_HTTP_TIMEOUT": "120"
       }
     }
@@ -118,8 +117,11 @@ cp import-wiki-inspect.json ~/.quickwork/profiles/<你的-profile>/mcp_config.js
 **注意这会覆盖掉文件里原有的全部 server。** `builder-mcp` 不用担心 —— Quick 默认就有，
 不需要在这个文件里声明。
 
-`UV_DEFAULT_INDEX` 是国内 pip 镜像，网络没问题可以把整个 `"env": { ... }` 删掉
-（删完注意前一项末尾不能留逗号）。
+`UV_HTTP_TIMEOUT` 是给首次下载 `fastmcp` 留的余量，网络快的话可以把整个
+`"env": { ... }` 删掉（删完注意前一项末尾不能留逗号）。
+
+国内装 `fastmcp` 慢的话，可以自己加一个 `UV_DEFAULT_INDEX` 指向**你信任的**
+pip 镜像 —— 默认配置里不预设第三方源。
 
 #### 改完先验格式
 
