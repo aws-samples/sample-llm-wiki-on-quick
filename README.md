@@ -14,7 +14,7 @@
 | **`agent/`** | 把 `AGENTS.md` 做成常驻 Quick agent 的完整说明 |
 | **`mcp/wiki-inspect/`** | 只读内省 MCP：4 个工具补上 Quick 内置工具读不到的三处 |
 | **`skill/quick-wiki-ops/`** | Claude Code 的操作手册 + 独立校验脚本（12 项确定性检查） |
-| **`examples/`** | 一次真实运行的完整产出：59 页 / 298 条边 / 零死链 |
+| **`examples/`** | 一次真实运行的完整产出：62 页 / 316 条边 / 零死链 |
 | **`docs/`** | 抽取规则模板、定时任务 prompt、架构图源文件 |
 
 ## 快速开始
@@ -183,12 +183,13 @@ run_python(
 
 ## 实测数据
 
-一次完整运行（四份官方素材：Karpathy gist、AWS Agent Registry 公告、MCP 规范、A2A 规范）：
+一次完整运行（11 份素材：Karpathy gist、Bush 1945、MCP 规范、A2A 规范、
+AWS Agent Registry 公告、AgentCore 服务簇/Runtime/Gateway 官方文档等）：
 
 | | |
 |---|---|
-| 内容页 | **59** |
-| `linksTo` 边 | **298** |
+| 内容页 | **62** |
+| `linksTo` 边 | **316** |
 | 死链 | **0** |
 | lint | 12 项全绿 |
 
@@ -230,7 +231,7 @@ llm-wiki-on-quick/
 ├── skill/quick-wiki-ops/      Claude Code 用
 │   ├── SKILL.md               操作手册：工具分工、豁免清单、避坑
 │   └── scripts/quick_wiki_lint.py
-├── examples/                  一次真实运行的 59 页产出
+├── examples/                  一次真实运行的 62 页产出
 └── docs/
     ├── why-not-kg-extraction.md   三组实测对照
     ├── extraction-rules.md        想自己验抽取器时用

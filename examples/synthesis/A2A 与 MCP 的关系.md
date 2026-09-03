@@ -25,7 +25,7 @@ A2A 规范 Appendix B 原文明确二者「互补」，并给出协同图景：�
 | 传输基础 | JSON-RPC 2.0 | HTTP + JSON-RPC 2.0 / gRPC / HTTP-REST（多绑定） |
 | 状态性 | [[无状态协议\|无状态]]（本版移除 session） | 有状态 [[A2A Task\|Task]]，经历生命周期 |
 | 发现机制 | `server/discover` RPC | [[Agent Card]]（well-known URI / 目录） |
-| 不透明性 | server 不能看进对话/其他 server | Opaque Execution：agent 不共享内部状态/工具 |
+| 不透明性 | server 不能看进对话/其他 server | [[Opaque Execution]]：agent 不共享内部状态/工具 |
 | 异步长任务 | Tasks 扩展（本版移出核心） | 原生 Async First（流式 + [[Push Notifications]]） |
 
 ## 两处值得注意的呼应

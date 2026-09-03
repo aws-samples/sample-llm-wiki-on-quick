@@ -1,7 +1,7 @@
 ---
 type: concept
 tags: [rag, retrieval, baseline]
-status: developing
+status: stable
 summary: 检索增强生成——查询时从原始文档检索相关片段并生成答案；作为 LLM Wiki 的对照基线，其局限是知识不累积、每次查询从零重新拼凑。
 ---
 # RAG
@@ -18,9 +18,25 @@ Retrieval-Augmented Generation（检索增强生成）：上传一堆文件，�
 
 LLM Wiki 的差异：知识**编译一次然后持续保鲜**，wiki 是持久、复利的产物，而非每次查询重新推导。
 
-> 注：本页目前只覆盖原文把 RAG 作对照基线的用法，`status: developing`。RAG 本身的机制（embedding、向量检索、重排等）待专门素材再充实。
+## 检索机制
+
+RAG 本身是一条**三阶段管线**（据 [[混合检索与重排 (InfoQ)]]）：
+
+1. **Chunking**——把语料切成可索引单元。
+2. **Retrieval**——对查询在块上搜索，返回 top-K。
+3. **Generation**——把 top-K 作上下文交 LLM 产出答案。
+
+检索阶段是质量瓶颈。纯向量检索的问题：**embedding 是「近似引擎」**——擅长按意思找相似，但系统性地分不清具体实体（版本号、错误码、flag 名），因为语义相近的文本产生几乎相同的向量。生产检索栈因此分层补足：
+
+- **BM25**——词法排序（IDF + 词频饱和 + 文档长度归一化），提供 embedding 给不了的精确度。
+- **RRF（倒数排名融合）**——只按排名位置合并 BM25 与向量结果，无需分数归一化。
+- **Cross-encoder 重排**——可选的最后一级，在小候选集上精排。
+
+> 与本地工具的呼应：[[qmd]] 正是「混合 BM25/向量检索 + LLM 重排」的本地实现，恰好对应这套分层检索栈。
 
 常见叫法：检索增强生成、Retrieval-Augmented Generation、检索式问答、与文档对话、chat with your docs、向量检索问答。
 
 ## 关联
 - 对照的模式: [[LLM Wiki]]
+- 检索机制来源: [[混合检索与重排 (InfoQ)]]
+- 本地实现: [[qmd]]

@@ -17,7 +17,7 @@ summary: 让独立、可能不透明的 AI agent 作为对等方通信协作的�
 - **发现**——[[Agent Card]]：server 发布的 JSON 元数据，经 well-known URI 或目录发现，可用 JWS 签名。
 - **异步**——[[Push Notifications]]：经 webhook 交付的异步任务更新，体现「Async First」。
 
-**指导原则**：Simple（复用 HTTP/JSON-RPC/SSE）、Enterprise Ready、Async First、Modality Agnostic、Opaque Execution。
+**指导原则**：Simple（复用 HTTP/JSON-RPC/SSE）、Enterprise Ready、Async First、Modality Agnostic、[[Opaque Execution]]。
 
 ## 在企业治理场景里的角色
 
@@ -42,5 +42,6 @@ A2A（agent↔agent 横向协作）与 [[Model Context Protocol]]（agent→工�
 - 发现: [[Agent Card]]
 - 异步更新: [[Push Notifications]]
 - 与 MCP 对比: [[A2A 与 MCP 的关系]]
+- 指导原则: [[Opaque Execution]]
 - 编目于: [[AWS Agent Registry]]
 - 作为记录类型: [[四种记录类型]]

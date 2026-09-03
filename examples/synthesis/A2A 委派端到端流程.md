@@ -29,7 +29,7 @@ summary: 一个 agent 发现并委派另一个 agent 干活的端到端时序—
 
 **4. 派活（Send Message → Task）**
 
-用 [[A2A 协议操作|Send Message]] 发起交互。agent 通常返回一个有状态的 [[A2A Task]]（也可能对简单交互直接回 [[A2A 消息与内容模型|Message]]）。这一步不需要共享内部状态——A2A 的 Opaque Execution 原则：只按声明的能力和交换的信息协作。
+用 [[A2A 协议操作|Send Message]] 发起交互。agent 通常返回一个有状态的 [[A2A Task]]（也可能对简单交互直接回 [[A2A 消息与内容模型|Message]]）。这一步不需要共享内部状态——A2A 的 [[Opaque Execution]] 原则：只按声明的能力和交换的信息协作。
 
 **5. 追踪结果**
 

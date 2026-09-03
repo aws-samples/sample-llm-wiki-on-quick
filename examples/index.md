@@ -39,6 +39,10 @@ wiki 的内容目录。**每次 ingest 后更新这个文件。**
 | [[A2A 消息与内容模型]] | A2A 承载内容的三对象——Message（通信轮次）、Part（最小单元）、Artifact（任务产出）。 | 2026-09-02 |
 | [[Push Notifications]] | A2A 经 webhook 交付的异步任务更新，用于长任务或断连场景；载荷是 StreamResponse。 | 2026-09-02 |
 | [[Shadow AI]] | 未注册、无监管的影子 agent/工具；Registry 用组织级 auto-detection 应对。 | 2026-09-02 |
+| [[Elicitation]] | MCP 里 client 向 server 提供的主要功能——server 发起、向用户索取额外信息；本版经 MRTR 实现，是 Sampling/Roots 弃用后仅存的 client 侧功能。 | 2026-09-02 |
+| [[Opaque Execution]] | A2A 五大指导原则之一——agent 作为对等方协作时只基于声明的能力和交换的信息，无需共享内部想法/计划/工具实现。 | 2026-09-02 |
+| [[AgentCore 服务簇]] | Amazon Bedrock AgentCore 是一簇 13 个模块化服务（Runtime/Gateway/Memory/Identity 等），可独立或组合使用；枢纽索引页。 | 2026-09-02 |
+| [[Agentic Resource Discovery]] | 跨环境 agent 发现的开放规范（Apache 2.0），类比 DNS 做 registry 联邦，与 AWS Agent Registry 互补。 | 2026-09-03 |
 
 ## Entities
 
@@ -47,8 +51,20 @@ wiki 的内容目录。**每次 ingest 后更新这个文件。**
 | [[Obsidian]] | 本地 markdown 知识管理工具；在 LLM Wiki 里充当人的浏览端与「IDE」。 | 2026-09-02 |
 | [[qmd]] | 本地 markdown 搜索引擎，混合 BM25/向量检索加 LLM 重排，有 CLI 与 MCP server。 | 2026-09-02 |
 | [[AWS Agent Registry]] | AWS 的企业级 agent/工具/技能统一治理与发现目录，2026-08-31 GA。 | 2026-09-02 |
-| [[Amazon Bedrock AgentCore]] | AWS 运行/管理 agent 的平台（runtime + Gateway）；Registry auto-detection 的检测目标。 | 2026-09-02 |
+| [[Amazon Bedrock AgentCore]] | AWS 的 agentic 平台，一簇 13 个模块化服务；Registry auto-detection 的检测目标。见 [[AgentCore 服务簇]]。 | 2026-09-02 |
 | [[Amazon Quick]] | AWS 面向业务用户的界面；连接 Registry 后从 Integrations 页发现并启用 agent。 | 2026-09-02 |
+| [[AgentCore Runtime]] | AgentCore 簇的 serverless agent 托管运行时，每会话独占 microVM 隔离。 | 2026-09-02 |
+| [[AgentCore Gateway]] | AgentCore 簇的统一安全入口，把 API/Lambda/服务转成 MCP 工具。 | 2026-09-02 |
+| [[AgentCore Memory]] | AgentCore 簇的记忆服务，短期 + 长期记忆，跨会话持久、可跨 agent 共享。 | 2026-09-02 |
+| [[AgentCore Identity]] | AgentCore 簇的身份/认证管理服务，兼容现有 IdP。 | 2026-09-02 |
+| [[AgentCore Harness]] | AgentCore 簇的托管 agent loop，单次 API 调用定义并运行 agent。 | 2026-09-02 |
+| [[AgentCore Code Interpreter]] | AgentCore 簇的隔离代码沙箱，执行 Python/JS/TS。 | 2026-09-02 |
+| [[AgentCore Browser]] | AgentCore 簇的云端浏览器运行时，agent 操作 web 应用。 | 2026-09-02 |
+| [[AgentCore Observability]] | AgentCore 簇的可观测服务，基于 OpenTelemetry 追踪/调试/监控。 | 2026-09-02 |
+| [[AgentCore Evaluations]] | AgentCore 簇的评估服务，自动化度量 agent 表现，结果并入 Observability。 | 2026-09-02 |
+| [[AgentCore Optimization]] | AgentCore 簇的持续改进服务，基于 Evaluations + A/B 测试。 | 2026-09-02 |
+| [[AgentCore Policy]] | AgentCore 簇的边界控制服务，用自然语言或 Cedar 写规则，经 Gateway 拦截工具调用。 | 2026-09-02 |
+| [[AgentCore Payments]] | AgentCore 簇的支付服务，用 x402/MPP 让 agent 做微交易。 | 2026-09-02 |
 
 ## Sources
 
@@ -58,6 +74,13 @@ wiki 的内容目录。**每次 ingest 后更新这个文件。**
 | [[AWS Agent Registry (AWS Blog)]] | `raw/articles/aws-agent-registry.md` | AWS Agent Registry GA 公告原文摘要。 | 2026-09-02 |
 | [[MCP Specification (2026-07-28)]] | `raw/articles/mcp-specification-2026-07-28.md` | MCP 官方规范 2026-07-28 版原文摘要。 | 2026-09-02 |
 | [[A2A Specification]] | `raw/articles/a2a-specification.md` | A2A 协议官方规范节选原文摘要。 | 2026-09-02 |
+| [[AWS Agent Registry 定价与区域 (Unite.AI)]] | Unite.AI（web） | AWS Agent Registry 消费型定价数字、Free Tier 阈值与 GA 区域。 | 2026-09-02 |
+| [[AgentCore Gateway (AWS Docs)]] | AWS 官方文档（web） | AgentCore Gateway 的定位与六项关键能力。 | 2026-09-02 |
+| [[AgentCore Runtime (AWS Docs)]] | AWS 官方文档（web） | AgentCore Runtime 的 microVM 会话隔离、两种计算类型、协议与认证。 | 2026-09-02 |
+| [[混合检索与重排 (InfoQ)]] | InfoQ（web） | RAG 三阶段管线、embedding 近似本质、BM25/RRF/cross-encoder 重排。 | 2026-09-02 |
+| [[As We May Think (Bush 1945)]] | 维基百科（web） | Vannevar Bush 1945 年 memex 文章的背景、机制设想与影响。 | 2026-09-02 |
+| [[AgentCore 服务簇总览 (AWS Docs)]] | AWS 官方文档（web） | AgentCore 平台 13 个模块化服务的逐条官方描述。 | 2026-09-02 |
+| [[ARD (AWS Blog)]] | `raw/articles/ard-agentic-resource-discovery.md` | AWS 博客介绍 ARD 开放发现规范。 | 2026-09-03 |
 
 ## Synthesis
 
@@ -65,6 +88,7 @@ wiki 的内容目录。**每次 ingest 后更新这个文件。**
 |---|---|---|
 | [[A2A 与 MCP 的关系]] | A2A（agent↔agent 协作）与 MCP（agent→工具使用）是互补协议，在 Registry 里并列为记录类型。 | 2026-09-02 |
 | [[A2A 委派端到端流程]] | 一个 agent 发现并委派另一个 agent 干活的端到端时序——发现 Agent Card→选传输→验签认证→Send Message 建 Task→拿结果。 | 2026-09-02 |
+| [[Agent 发现的三个层次]] | Agent Card（单 agent）/ AWS Agent Registry（单环境）/ ARD（跨环境联邦）三层发现的作用域递进对比。 | 2026-09-03 |
 
 ## 待消化
 

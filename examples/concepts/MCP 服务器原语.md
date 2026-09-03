@@ -18,7 +18,7 @@ summary: MCP server 向 client 提供的三种基本构件——Prompts（用户
 
 ## 与能力、客户端功能的关系
 
-server 要提供某原语，须在[[能力协商|能力]]里通告。对应地，client 也能向 server 提供功能——主要是 **Elicitation**（server 发起、向用户索取额外信息），在本版通过 [[MRTR 与 InputRequiredResult]] 模式实现。
+server 要提供某原语，须在[[能力协商|能力]]里通告。对应地，client 也能向 server 提供功能——主要是 **[[Elicitation]]**（server 发起、向用户索取额外信息），在本版通过 [[MRTR 与 InputRequiredResult]] 模式实现。
 
 常见叫法：MCP 服务器原语、server primitives、三种原语、Prompts/Resources/Tools、提示/资源/工具、server features、服务器功能。
 
@@ -27,3 +27,4 @@ server 要提供某原语，须在[[能力协商|能力]]里通告。对应地�
 - 通告机制: [[能力协商]]
 - 安全约束: [[MCP 安全与信任]]
 - client 侧对应: [[MRTR 与 InputRequiredResult]]
+- client 侧功能: [[Elicitation]]
