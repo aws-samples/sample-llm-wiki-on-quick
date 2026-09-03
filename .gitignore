@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+._*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 编辑器
+.idea/
+.vscode/
+*.swp
+
+# 本地实验产物（scaffold 是模板，用户的实际 vault 不该进仓库）
+/Wiki-Vault/
+*.local.*

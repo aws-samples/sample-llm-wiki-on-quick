@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="31.3.2">
+  <diagram name="LLM Wiki on Quick">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="860" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="vault" value="~/Wiki-Vault（你的 markdown）" style="swimlane;startSize=34;html=1;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=13;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="60" width="330" height="600" as="geometry" />
+        </mxCell>
+
+        <mxCell id="schema" value="AGENTS.md&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;schema 层：约定 + 三个操作&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="vault">
+          <mxGeometry x="30" y="60" width="270" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="raw" value="raw/" style="swimlane;startSize=26;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="vault">
+          <mxGeometry x="30" y="150" width="270" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rawtxt" value="不可变素材&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;articles/ · papers/ · assets/&lt;br&gt;人写入，LLM 只读&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=12;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="raw">
+          <mxGeometry x="15" y="35" width="240" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="wikidir" value="wiki/" style="swimlane;startSize=26;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" vertex="1" parent="vault">
+          <mxGeometry x="30" y="310" width="270" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="meta" value="index.md · log.md&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;内容目录 · 操作日志&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=11;" vertex="1" parent="wikidir">
+          <mxGeometry x="15" y="35" width="240" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="pages" value="concepts/ · entities/&#xa;sources/ · synthesis/&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;靠 [[双链]] 织成知识网&lt;br&gt;LLM 完全拥有&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=11;" vertex="1" parent="wikidir">
+          <mxGeometry x="15" y="97" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="humanread" value="人读它" style="rounded=1;html=1;align=center;verticalAlign=middle;fontSize=11;fontColor=#666666;fontStyle=2;fillColor=#ffffff;strokeColor=none;" vertex="1" parent="wikidir">
+          <mxGeometry x="15" y="200" width="240" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="quick" value="Amazon Quick 桌面端" style="swimlane;startSize=34;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="490" y="60" width="330" height="640" as="geometry" />
+        </mxCell>
+
+        <mxCell id="switches" value="检索能力" style="swimlane;startSize=26;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="quick">
+          <mxGeometry x="30" y="60" width="270" height="152" as="geometry" />
+        </mxCell>
+        <mxCell id="kw" value="Keyword search" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="switches">
+          <mxGeometry x="15" y="35" width="240" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sem" value="Semantic search" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="switches">
+          <mxGeometry x="15" y="72" width="240" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="kguse" value="Knowledge Graph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=11;fontColor=#333333;" vertex="1" parent="switches">
+          <mxGeometry x="15" y="109" width="240" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="idx" value="索引（本地 SQLite）" style="swimlane;startSize=26;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="quick">
+          <mxGeometry x="30" y="278" width="270" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="fts" value="全文索引（FTS5）" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="idx">
+          <mxGeometry x="15" y="38" width="115" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="vec" value="向量索引" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="idx">
+          <mxGeometry x="140" y="38" width="115" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="graph" value="知识图谱 nodes + edges&#xa;&lt;font style=&quot;font-size:9px&quot;&gt;由 agent 用 kg_add 灌入&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="idx">
+          <mxGeometry x="15" y="94" width="240" height="44" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tools" value="内置工具" style="swimlane;startSize=26;html=1;whiteSpace=wrap;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="quick">
+          <mxGeometry x="30" y="458" width="270" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="t1" value="file_rag_search" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="tools">
+          <mxGeometry x="15" y="35" width="115" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="t2" value="kg_search / kg_add" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="tools">
+          <mxGeometry x="140" y="35" width="115" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="t3" value="file_write" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="tools">
+          <mxGeometry x="15" y="71" width="115" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="t4" value="run_python" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="tools">
+          <mxGeometry x="140" y="71" width="115" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="t5" value="Mission Control（定时任务）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="tools">
+          <mxGeometry x="15" y="107" width="240" height="26" as="geometry" />
+        </mxCell>
+
+        <mxCell id="agent" value="LLM Wiki Agent" style="swimlane;startSize=34;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=13;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="940" y="120" width="300" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="agentnote" value="instructions = AGENTS.md 全文" style="text;html=1;align=center;verticalAlign=middle;fontSize=10;fontColor=#666666;fontStyle=2" vertex="1" parent="agent">
+          <mxGeometry x="20" y="40" width="260" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="op1" value="Ingest&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;读素材 → 写页 → 灌边 → 记账&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="agent">
+          <mxGeometry x="20" y="70" width="260" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="op2" value="Query&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;先读 index → 检索 → 带出处作答&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="agent">
+          <mxGeometry x="20" y="136" width="260" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="op3" value="Lint&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;矛盾 · 过期 · 缺页 · 缺交叉引用&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="agent">
+          <mxGeometry x="20" y="202" width="260" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="mcp" value="wiki-inspect MCP&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;12 项确定性校验（只读）&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;dashed=1;" vertex="1" parent="agent">
+          <mxGeometry x="20" y="266" width="260" height="46" as="geometry" />
+        </mxCell>
+
+        <mxCell id="junction" value="" style="ellipse;html=1;fillColor=#82b366;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="424" y="378" width="12" height="12" as="geometry" />
+        </mxCell>
+        <mxCell id="e1a" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;endArrow=none;exitX=1;exitY=0.55;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="raw" target="junction">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1b" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;endArrow=none;exitX=1;exitY=0.12;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="wikidir" target="junction">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1c" value="① 扫描索引" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="junction" target="switches">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" value="② 建索引" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="switches" target="idx">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="③ 供检索" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="idx" target="tools">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" value="④ 调用工具" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d79b00;strokeWidth=2;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.6;entryDx=0;entryDy=0;" edge="1" parent="1" source="tools" target="agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e6" value="⑤ file_write 写回 wiki/&#xa;（写页 → 灌边 → 触发索引）" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.9;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="agent" target="wikidir">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1290" y="820" />
+              <mxPoint x="400" y="820" />
+            </Array>
+            <mxPoint as="offset" x="-40" y="0" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e7" value="每次会话读 schema" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="schema" target="agent">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="205" y="20" />
+              <mxPoint x="1090" y="20" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="cloud" value="embedding 生成在云端&#xa;&lt;font style=&quot;font-size:10px&quot;&gt;索引与检索在本地&lt;/font&gt;" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="560" y="740" width="190" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#999999;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="vec" target="cloud">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="850" y="360" />
+              <mxPoint x="850" y="763" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="legend" value="图例" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;verticalAlign=top;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="940" y="480" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" value="" style="rounded=0;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="legend">
+          <mxGeometry x="12" y="30" width="26" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1t" value="原始资料层 —— 人写，LLM 只读" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#333333;" vertex="1" parent="legend">
+          <mxGeometry x="46" y="28" width="240" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2" value="" style="rounded=0;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="legend">
+          <mxGeometry x="12" y="54" width="26" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2t" value="Wiki 层 —— LLM 拥有，人读" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#333333;" vertex="1" parent="legend">
+          <mxGeometry x="46" y="52" width="240" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="lg3" value="" style="rounded=0;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="legend">
+          <mxGeometry x="12" y="78" width="26" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="lg3t" value="Schema 层 / 校验层" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#333333;" vertex="1" parent="legend">
+          <mxGeometry x="46" y="76" width="240" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="lg4" value="" style="rounded=0;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="legend">
+          <mxGeometry x="12" y="102" width="26" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="lg4t" value="Agent 与图谱（由 agent 灌入）" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#333333;" vertex="1" parent="legend">
+          <mxGeometry x="46" y="100" width="240" height="18" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

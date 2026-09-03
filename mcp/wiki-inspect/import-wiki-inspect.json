@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "wiki-inspect": {
+      "description": "Quick 上 LLM Wiki 的只读内省层：lint / edges / index_status / hubs",
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "fastmcp",
+        "~/.quickwork/mcp-servers/wiki-inspect/server.py"
+      ],
+      "env": {
+        "UV_DEFAULT_INDEX": "https://mirrors.aliyun.com/pypi/simple/",
+        "UV_HTTP_TIMEOUT": "120"
+      }
+    }
+  }
+}

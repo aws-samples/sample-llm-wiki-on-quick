@@ -1,0 +1,191 @@
+# wiki-inspect 安装步骤
+
+## Step 1 放 server 文件
+
+```bash
+mkdir -p ~/.quickwork/mcp-servers/wiki-inspect
+cp server.py ~/.quickwork/mcp-servers/wiki-inspect/
+```
+
+## Step 2 注册到 Quick
+
+两条路：**UI 导入**（省事）或**直接改配置文件**（可靠）。
+
+---
+
+### 路线 A：UI 导入
+
+导入这个文件：
+
+```
+mcp/wiki-inspect/import-wiki-inspect.json
+```
+
+#### ⚠️ 一个文件只能放一个 server
+
+**Quick 的导入器只读 `mcpServers` 里的第一个 key，其余全部丢掉。** 从 app 代码里挖出来的逻辑：
+
+```js
+if (t.mcpServers && typeof t.mcpServers === "object") {
+    let e = Object.keys(t.mcpServers);
+    if (e.length === 0) { Ui("No servers found in mcpServers"); return }
+    i = e[0],                    // ← 只取第一个 key
+    r = t.mcpServers[i]          // ← 只导入第一个 server
+}
+```
+
+所以如果你的文件里有两项：
+
+```json
+{
+  "mcpServers": {
+    "run":          { ... },     ← 只有这个被导入
+    "wiki-inspect": { ... }      ← 静默丢弃
+  }
+}
+```
+
+导入会「成功」，但进去的是 `run`，`wiki-inspect` 根本没进 —— **看起来像失败，实际是导错了对象。**
+这就是为什么本目录把它们拆成了两个文件：
+
+| 文件 | 内容 |
+|---|---|
+| `import-wiki-inspect.json` | 只有 `wiki-inspect` ← **用这个** |
+| `import-run.json` | 只有 `run`（可选，不是本方案依赖） |
+
+要装多个 server 就**分多次导入**，一次一个文件。
+
+#### 导入器认哪些字段
+
+从代码确认：`name`、`description`、`command`、`args`、`url`、`headers`、`env`。
+
+`mcpServers` 的 key 会被当成 server 名字（代码里 `name: i || e.name`），
+所以带 `mcpServers` 包装比裸的单 server 定义更明确 —— 名字不用另外填。
+
+---
+
+### 路线 B：直接改配置文件（推荐）
+
+配置文件在：
+
+```
+~/.quickwork/profiles/<你的-profile>/mcp_config.json
+```
+
+profile 目录名形如 `enterprise-xxxxxxxx-us-west-2`。不确定是哪个就跑：
+
+```bash
+ls -d ~/.quickwork/profiles/*/ | while read d; do
+  [ -f "$d/mcp_config.json" ] && echo "$d"
+done
+```
+
+**这条路不走导入器**，所以没有「只读第一个」的限制，一个文件里放多少 server 都行。
+
+#### 已经有别的 server 时：注意逗号
+
+JSON 的规则：**项与项之间要有逗号，最后一项后面不能有逗号。**
+
+假设你原来只有一项：
+
+```
+"run": {
+  ...
+}          ← 这里原来没有逗号，因为它是最后一项
+```
+
+要在它后面加 `wiki-inspect`，**必须先给这个 `}` 补一个逗号**，变成 `},`。
+漏了这一步就报格式错误 —— 这是最常见的原因。
+
+加完长这样：
+
+```json
+{
+  "mcpServers": {
+    "run": {
+      "command": "uv",
+      "args": ["run", "--with", "fastmcp", "..."],
+      "env": { "UV_HTTP_TIMEOUT": "120" }
+    },
+    "wiki-inspect": {
+      "description": "Quick 上 LLM Wiki 的只读内省层",
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "fastmcp",
+        "~/.quickwork/mcp-servers/wiki-inspect/server.py"
+      ],
+      "env": {
+        "UV_DEFAULT_INDEX": "https://mirrors.aliyun.com/pypi/simple/",
+        "UV_HTTP_TIMEOUT": "120"
+      }
+    }
+  }
+}
+```
+
+#### 没有别的 server 时：直接覆盖
+
+```bash
+cp import-wiki-inspect.json ~/.quickwork/profiles/<你的-profile>/mcp_config.json
+```
+
+**注意这会覆盖掉文件里原有的全部 server。** `builder-mcp` 不用担心 —— Quick 默认就有，
+不需要在这个文件里声明。
+
+`UV_DEFAULT_INDEX` 是国内 pip 镜像，网络没问题可以把整个 `"env": { ... }` 删掉
+（删完注意前一项末尾不能留逗号）。
+
+#### 改完先验格式
+
+```bash
+python3 -c "import json; json.load(open('$HOME/.quickwork/profiles/<你的-profile>/mcp_config.json')); print('✅ 格式合法')"
+```
+
+报错就说明还有逗号或括号问题。
+
+## Step 3 重启 Quick
+
+配置只在启动时读，改完必须重启。
+
+## Step 4 验证工具可用
+
+在 Quick 对话里：
+
+```
+跑一次 wiki_lint
+```
+
+正常应该返回类似：
+
+```
+内容页 38 / 实体 38 / linksTo 172 / 需处理 0 项
+```
+
+四个工具都试一下：
+
+```
+wiki_lint(brief=True)          → 只要结论，省 token
+wiki_edges(page="某个页名")     → 那一页的全部边，不受 3 条上限
+wiki_index_status()            → 索引配置和时间戳
+wiki_hubs()                    → 入链排名 + 网状/星形判定
+```
+
+## 排查
+
+**导入「成功」但工具不出现** —— 最可能是导入了含多个 server 的文件，
+Quick 只取了第一个。用 `import-wiki-inspect.json`（只含一项），或走路线 B 改配置文件。
+
+**工具不出现** —— 检查三件事：
+
+1. JSON 格式（用上面那条 `python3 -c` 验）
+2. `server.py` 路径对不对：`ls ~/.quickwork/mcp-servers/wiki-inspect/server.py`
+3. `uv` 装了没：`command -v uv`。没装的话 `brew install uv` 或
+   `curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+**工具报「找不到注册了此 vault 的 profile 库」** —— 说明 `~/Wiki-Vault` 还没在
+Quick 里注册成文件夹。先做 `SETUP.md` 的 Step 2。
+
+**首次调用慢** —— `uv run --with fastmcp` 第一次要下载 fastmcp，之后有缓存就快了。
+配置里的 `UV_HTTP_TIMEOUT: 120` 就是给这一次留的余量。
