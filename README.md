@@ -19,7 +19,7 @@
 
 ## 快速开始
 
-**前置**：Amazon Quick 桌面应用，Pro 或以上订阅。
+**前置**：Amazon Quick 桌面端，Pro 或以上订阅。
 
 ### 1. 铺骨架
 
@@ -235,6 +235,7 @@ llm-wiki-on-quick/
 
 - [Andrej Karpathy — `llm-wiki.md`](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)（2026-04）
 - [What is Amazon Quick?](https://docs.aws.amazon.com/quick/latest/userguide/what-is.html)
+- [Amazon Quick on desktop](https://docs.aws.amazon.com/quick/latest/userguide/amazon-quick-desktop.html)
 - [Connectors（桌面端）](https://docs.aws.amazon.com/quick/latest/userguide/connections-desktop.html)
 - [Skills and agents（桌面端）](https://docs.aws.amazon.com/quick/latest/userguide/skills-and-agents-desktop.html)
 
