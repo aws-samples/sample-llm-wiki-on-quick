@@ -54,6 +54,20 @@ def parse_links(text: str) -> list[str]:
 
 # ---------- 数据采集 ----------
 
+def _deny_attach(action: int, _a1, _a2, _db, _trigger) -> int:
+    """拒绝 ATTACH / DETACH，其余放行。
+
+    mode=ro 挡住了全部写操作（INSERT/UPDATE/DELETE/CREATE/DROP），但**不挡
+    ATTACH DATABASE** —— 那能挂载并创建其它库文件，等于绕开只读。
+
+    本模块的 SQL 全是字面量、参数走 ? 绑定，所以现在触发不了。加这道授权回调
+    是为了让「只读」在引擎层面完整成立，而不是依赖「调用方不会写出坏 SQL」。
+    """
+    if action in (sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH):
+        return sqlite3.SQLITE_DENY
+    return sqlite3.SQLITE_OK
+
+
 def within(registered: str, vault: Path) -> bool:
     """注册路径是否等于 vault 或落在 vault 之内。"""
     try:
@@ -74,6 +88,7 @@ def find_db(vault: Path) -> Path | None:
     for path in sorted(glob.glob(pattern)):
         try:
             conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+            conn.set_authorizer(_deny_attach)
             rows = conn.execute("SELECT path FROM folders").fetchall()
             conn.close()
             if any(within(r[0], vault) for r in rows):
@@ -116,6 +131,7 @@ def read_pages(vault: Path) -> dict[str, dict]:
 def read_db(db: Path, vault: Path) -> dict:
     """从库里读实体、边、文件索引状态。只读连接。"""
     conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    conn.set_authorizer(_deny_attach)
     conn.row_factory = sqlite3.Row
     out: dict = {"entities": [], "edges": [], "files": [], "folders": []}
 

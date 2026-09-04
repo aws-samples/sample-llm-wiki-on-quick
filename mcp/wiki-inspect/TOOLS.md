@@ -126,9 +126,10 @@ profile 目录名形如 `enterprise-xxxxxxxx-us-west-2`，看 `~/.quickwork/prof
 
 | | |
 |---|---|
-| **只读** | 数据库一律以 `mode=ro` 打开，没有任何 `INSERT` / `UPDATE` / `DELETE`。写操作走 `kg_add` / `kg_edit` / `file_write`，让 Quick 维护索引和计量 |
-| **不执行、不联网** | 无 `eval` / `exec` / `subprocess`，不发任何网络请求。只读本地文件和本地索引 |
-| **SQL 全参数化** | 没有一处把变量拼进 SQL 字符串 |
+| **只读（引擎强制）** | 数据库以 `mode=ro` 打开 —— 写操作在 SQLite 层面就被拒，不是靠代码自觉。另加授权回调拒绝 `ATTACH` / `DETACH`（`mode=ro` 不挡这两个，而 `ATTACH` 能创建新库文件）。写操作走 `kg_add` / `kg_edit` / `file_write`，让 Quick 维护索引和计量 |
+| **不执行、不联网** | 无 `eval` / `exec` / `subprocess` / `pickle`，不发任何网络请求。依赖只有 `fastmcp` 一个第三方包，其余全是标准库 |
+| **SQL 全参数化** | 没有一处把变量拼进 SQL 字符串，参数一律 `?` 绑定 |
+| **访问范围收窄** | 只读三处：Quick 的索引库（`mode=ro`）、`<vault>/wiki/**/*.md`、`<vault>/raw/**/*.md`。不碰其它任何路径 |
 | **`vault` 参数有闸** | 必须存在 `wiki/` 子目录、且该目录（或其子目录）在 Quick 里注册过。否则拒绝 |
 
 最后一条是特意加的。`vault` 由 agent 填，而 agent 的输入可能来自 `raw/` 里的
@@ -136,3 +137,13 @@ profile 目录名形如 `enterprise-xxxxxxxx-us-west-2`，看 `~/.quickwork/prof
 目录并把内容回传。两道闸把可达范围锁在注册过的 vault 内。
 
 （`rglob` 默认不跟随符号链接目录，所以 `wiki/` 里放一个指向 `/etc` 的软链也扫不出东西。）
+
+### 它不会做的事
+
+如果要过安全评审，这几条可以直接核对源码：
+
+- 不写任何文件、不建目录、不改权限、不改环境变量
+- 不开 socket、不发 HTTP、不做 DNS 查询
+- 不起子进程、不加载动态库、不反序列化
+- 不读 vault 和 Quick 索引库之外的路径，不读 `.md` 以外的文件类型
+- 不修改 Quick 的任何状态 —— 装上和卸掉，Quick 的行为完全一样

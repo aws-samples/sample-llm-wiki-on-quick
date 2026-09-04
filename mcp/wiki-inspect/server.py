@@ -55,6 +55,20 @@ def _parse_links(text: str) -> list[str]:
     return [m.rstrip("\\").strip() for m in WIKILINK_RE.findall(text)]
 
 
+def _deny_attach(action: int, _a1, _a2, _db, _trigger) -> int:
+    """拒绝 ATTACH / DETACH，其余放行。
+
+    mode=ro 挡住了全部写操作（INSERT/UPDATE/DELETE/CREATE/DROP），但**不挡
+    ATTACH DATABASE** —— 那能挂载并创建其它库文件，等于绕开只读。
+
+    本模块的 SQL 全是字面量、参数走 ? 绑定，所以现在触发不了。加这道授权回调
+    是为了让「只读」在引擎层面完整成立，而不是依赖「调用方不会写出坏 SQL」。
+    """
+    if action in (sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH):
+        return sqlite3.SQLITE_DENY
+    return sqlite3.SQLITE_OK
+
+
 def _within(registered: str, vault: Path) -> bool:
     """注册路径是否等于 vault 或落在 vault 之内。"""
     try:
@@ -71,6 +85,7 @@ def _find_db(vault: Path) -> Optional[Path]:
     for path in sorted(glob.glob(pattern)):
         try:
             conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+            conn.set_authorizer(_deny_attach)
             rows = conn.execute("SELECT path FROM folders").fetchall()
             conn.close()
             # 要求 vault 自身或其子目录被注册过 —— 不接受「vault 是注册路径的
@@ -84,6 +99,7 @@ def _find_db(vault: Path) -> Optional[Path]:
 
 def _ro(db: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    conn.set_authorizer(_deny_attach)
     conn.row_factory = sqlite3.Row
     # properties 是 JSONB（二进制），默认 UTF-8 解码会整行报错 —— 宽松解码
     conn.text_factory = lambda b: b.decode("utf-8", "replace")
