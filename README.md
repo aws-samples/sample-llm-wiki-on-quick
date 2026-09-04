@@ -4,7 +4,7 @@
 
 > **LLM Wiki 的思路是先编译，后查询。** 素材导入后 LLM 提前完成提取、整合、关联，产出一套互相链接的 markdown 维基，查询直接读它。新增资料时自动更新已有词条、标记冲突 —— 知识持续变厚，而不是每次从零推导。
 
-![架构](docs/images/architecture.svg)
+![架构](docs/images/architecture.png)
 
 ## 这个仓库提供什么
 
