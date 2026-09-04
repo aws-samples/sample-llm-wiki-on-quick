@@ -252,19 +252,19 @@ summary: AWS 托管的容器运行时环境，把 agent 和 MCP server 跑在容
 
 `kg_folder_rebuild` 会**删掉这个文件夹的全部实体再重抽**，而边有外键级联 —— 节点一删，你灌的 `linksTo` 边跟着全没。所以 rebuild 是破坏性操作。
 
-更要紧的是：**抽取规则（`special_instructions`）是软约束，抽取器不保证遵守。** 实测一次 rebuild 后同时出现四类偏差：
+更要紧的是：**抽取规则（`special_instructions`）是软约束，抽取器不保证遵守。** rebuild 后可能出现四类偏差：
 
-- 23 个文件只产出 21 个实体，两页完全没抽到
-- `concepts/LLM Wiki.md` 被命名成 `LLM Wiki 模式`，和 source 页撞名
-- category 出现 `Product` / `CreativeWork`，不是 frontmatter 的 `type`
-- summary 被换成了正文里某个段落，不是 frontmatter 的 `summary`
+- 部分文件完全没产出实体
+- 实体名不等于文件名（可能和别的页撞名）
+- category 不是 frontmatter 的 `type`
+- summary 被正文段落顶替，不是 frontmatter 的 `summary`
 
 所以 rebuild 前后要走一套**确定性校正**，全部用 `run_python` 做（纯代码，不靠判断）：
 
 **rebuild 之前**
 
 1. 从文件解析全部 wikilink，**按页名**记录（不要记 node_id —— rebuild 后 id 全变）
-2. 报告一遍：多少页、多少条边、有无死链。这是之后的对照基线
+2. 报告一遍：多少页、多少条边、有无死链。这是 rebuild 之后的比对基线
 
 **rebuild 之后**
 
@@ -278,7 +278,7 @@ summary: AWS 托管的容器运行时环境，把 agent 和 MCP server 跑在容
 
 **报告时要给出：** 修正了几处名字、几处 category、几处 summary、有几个文件没产出实体、边数是否恢复。不要只说「已完成」。
 
-**成本提醒**：抽取要花 token（实测 23 页约 8.7 万）。rebuild 不是免费操作，不要主动建议做，除非我明确要求或抽取规则刚改过。
+**成本提醒**：抽取按内容量计费，几十页的 wiki 一次 rebuild 是数万 token 级别。不是免费操作，不要主动建议做，除非我明确要求或抽取规则刚改过。
 
 ## 硬规则
 
@@ -343,21 +343,3 @@ prompt 里重复规格，只说要干什么：
 ```
 
 规格已经在 agent 里了。
-
----
-
-## 这一版补了什么（实测之后）
-
-第一版 instructions 跑完一遍 Ingest → Lint → Query 之后，按实际暴露的问题补了几处。
-**如果你已经用第一版建过 agent，用 `update_chat_agent` 把 instructions 换成上面这版。**
-
-| 补在哪 | 补了什么 | 为什么 |
-|---|---|---|
-| Lint 第 11 项 | 同名实体检查 | 库里实际存在同名节点（一个来自网页抽取、一个是 wiki 页），第一版没让它查，它就没报 |
-| Lint 第 12 项 | 索引时效检查 | `rag_index_time` 比 `modified_at` 旧 = 改动没进索引，检索拿到过期内容 |
-| Lint 报告要求 | 「零结果或异常数字先怀疑自己的查询」 | 实测踩过：把方向字段判成 `"out"`（实际 `"outgoing"`），误报「图谱 0 条边、严重漂移」 |
-| Query 第 2 步 | 三种检索的分工表 + 各自的「不要用什么」 | 第一版只说了两条，漏了「查反向链接不要只靠 kg_search」（3 条边上限） |
-| Query 第 5 步 | 归档判据拆成两种情形 | 第一版只说「有长期价值时」，太模糊。实测它判断对了，但值得写明 |
-| 维护图谱 | `kg_add` 会顺带建节点 | 这条不写清，容易以为必须等抽取跑完才有图。实际 9 页 39 条边全靠 `kg_add`，`kg_index_time` 全空但图正常 |
-| 维护图谱 | wikilink 变体归一化、`category` 用 `type` 首字母大写、灌完自己核数 | 前两条是正确性要求，第三条是自检 |
-| 硬规则 7 | 报告结果要如实 | 两次实测都遇到过：报告「已触发索引」但实际没有；用合理机制解释没有观测数据的现象 |

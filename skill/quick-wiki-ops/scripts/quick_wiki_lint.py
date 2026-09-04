@@ -10,8 +10,8 @@
     quick_wiki_lint.py --json             # 机器可读
     quick_wiki_lint.py --vault ~/Other    # 指定 vault
 
-为什么用脚本而不是让 agent 现场写：实测过 agent 把边的方向字段判成 "out"
-（实际是 "outgoing"），误报「图谱 0 条边、严重漂移」。查询 bug 比数据故障常见得多。
+为什么用脚本而不是让 agent 现场写：逻辑固定、结果可复现。
+查询 bug 比数据故障常见得多，所以异常数字先怀疑查询写错。
 """
 
 from __future__ import annotations
@@ -173,9 +173,8 @@ def entity_name(text_content: str, known: set[str]) -> str:
 # ---------- 缺页候选：结构提取 + 前缀族 ----------
 
 # 官方文档常把产品清单排成表格，抓取后被压平成「表头 + 连续短行」。
-# 这类结构比语义可靠 —— 实测 Quick 的抽取器把这张表当散文处理，
-# 挑走了文中显著的第三方名字（Slack/Jira），漏掉了表格里第 3、5 行
-# （AgentCore Memory / Identity）。结构提取则 13/13 全中。
+# 这类结构比语义可靠 —— 按「文中是否显著」抽会挑走反复出现的第三方名字，
+# 漏掉表格里真正的族成员。按结构提取则一个不漏。
 TABLE_HEADERS = [
     ("Service", "Description"),
     ("Name", "Description"),
@@ -229,9 +228,8 @@ def _missing_page_candidates(vault: Path, pages: set[str]) -> list[dict]:
     """扫 raw/ 素材，找「被结构化列为族成员、但 wiki 里没有页」的名字。
 
     只用**结构信号**（表格第一列、列表项的粗体开头），不用语义、不用前缀猜测。
-    实测过：前缀族启发式（和已有页共享首词）噪声压不住 —— 会产出
-    `AgentCore AgentCore`、`Amazon EC`（截断）、`Model The`（语法碎片）
-    这类垃圾，74 项里大半不可用。结构提取只有十几项且全部有据可查。
+    前缀族启发式（和已有页共享首词）噪声压不住 —— 会产出重复词、截断词、
+    语法碎片这类不可用的候选。结构提取的每一项都有据可查。
 
     发现归代码，判断归 agent —— 该不该建页、会不会变成 stub，由它定。
     """

@@ -73,8 +73,8 @@ python3 ~/.claude/skills/quick-wiki-ops/scripts/quick_wiki_lint.py --strict   # 
 python3 ~/.claude/skills/quick-wiki-ops/scripts/quick_wiki_lint.py --json     # 机器可读
 ```
 
-它比让 agent 现场写代码可靠 —— 实测过 agent 把方向字段判成 `"out"`（实际 `"outgoing"`），
-误报「图谱 0 条边、严重漂移」。**查询 bug 比数据故障常见得多。**
+它比让 agent 现场写代码可靠 —— 逻辑固定、结果可复现。
+**查询 bug 比数据故障常见得多**，所以异常数字先怀疑查询写错。
 
 ### 检查清单（脚本覆盖 ✅ / 需人判断 👤）
 
@@ -125,19 +125,14 @@ python3 ~/.claude/skills/quick-wiki-ops/scripts/quick_wiki_lint.py --json     # 
 但 wiki 页**没有待发现的东西** —— 实体名 = 文件名，category = frontmatter 的 `type`，
 summary 也已写好。发现能力用在这里就是过度发现。
 
-三组实测对照（同一个 23 页的 wiki）：
+让 agent 在写页时用 `kg_add` 显式灌，图和文件严格一对一、零 token 开销。
+开自动抽取则会额外产出正文术语的碎片节点，还要花 token 善后。
 
-| 配置 | 结果 | 累计 tokens |
-|---|---|---|
-| 不用抽取器（agent 灌） | **23 页 = 23 实体，零偏差** | 0 |
-| 带规则 + rebuild | 缺 2 实体、1 处撞名、5 处 category 错 | 87,271 |
-| 无规则 + rebuild | 35 个碎片、21 处 category 错 | 197,572 |
-
-`special_instructions` 是**软约束**，抽取器不保证遵守 —— 加规则能把碎片从 35 压到个位数，
-但压不干净。**不能靠「把规则写得更严」解决，因为出问题的正是规则本身没被遵守。**
+`special_instructions` 是**软约束**，抽取器不保证遵守 —— 写规则能减少碎片，但压不干净。
+**不能靠「把规则写得更严」解决，因为出问题的正是规则本身没被遵守。**
 
 **关掉 KG 不影响已有的图** —— 那个开关只管「扫描时要不要自动抽取」，
-图谱面板读的是全库数据。实测开关 `1 → 0` 前后节点/边数一个没动。
+图谱面板读的是全库数据，节点和边都还在。
 
 ## rebuild 后必须校正（只在确实要跑抽取时）
 

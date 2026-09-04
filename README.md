@@ -59,8 +59,10 @@ cp -R llm-wiki-on-quick/scaffold/ ~/Wiki-Vault/
 
 - **根目录索引全关**，只要 Agent access —— 它给 agent 读写整棵树的权限
 - **Semantic 是 Keyword 的升级档**，不能单独开 —— 勾 Semantic 前必须先勾 Keyword
-- **KG 不勾** —— 知识图谱**要用**，但不靠自动抽取，由 agent 用 `kg_add` 显式灌。
-  原因见 [docs/why-not-kg-extraction.md](docs/why-not-kg-extraction.md)（含三组实测对照）
+- **KG 不勾** —— 知识图谱**要用**，但不靠 Quick 的自动抽取，由 agent 在写页时用
+  `kg_add` 显式灌。wiki 页的实体名、类型、摘要都由 frontmatter 定死了，一文件一实体，
+  自动抽取只会额外产出正文术语的碎片节点，把已经清晰的结构搅乱。
+  关掉开关不影响已有的图 —— 它只管扫描时要不要自动抽取
 
 ### 3. 建 Quick agent
 
@@ -131,9 +133,9 @@ python3 skill/quick-wiki-ops/scripts/quick_wiki_lint.py --strict   # 有问题�
 跑一次 Lint
 ```
 
-**为什么要脚本**：agent 现场写校验代码出过错 —— 把边的方向字段判成 `"out"`
-（实际 `"outgoing"`），误报「图谱 0 条边、严重漂移」；另一次自报「零漂移」而
-脚本查出实体归属问题。**两者互为对照** —— 脚本也错过两次，其中一次是 agent 先发现的。
+**两条路都要跑**：脚本负责能精确判定的部分（计数、字段、链接完整性），
+agent 负责需要读懂内容才能判断的部分（矛盾、过时、缺口）。互为对照 ——
+任何一边单独用都会漏。
 
 ## 检索怎么用
 
@@ -143,9 +145,9 @@ python3 skill/quick-wiki-ops/scripts/quick_wiki_lint.py --strict   # 有问题�
 | 按页面类型筛 | `kg_search(category="Concept")`，支持多值 | `folder_path` 存注册路径，整个 `wiki/` 一行、值都一样 |
 | 谁引用了 X | 全文检索 `[[X]]` 字面量 | `kg_search` 的 edges 有 **3 条上限**，枢纽页会被截断 |
 
-**语义检索是必需项。** 实测：口语提问「一个 agent 想让另一个 agent 帮它干活，
-怎么找到对方、怎么谈条件？」—— 这几个说法在全库命中 0 页，关键词检索必然空手而归，
-语义检索仍准确定位到 `Agent Card` 页并给出三种发现机制。
+**语义检索是必需项。** 用日常说法提问时（「一个 agent 想让另一个 agent 帮它干活，
+怎么找到对方」），字面词往往在全库一次都没出现过，关键词检索必然空手而归 ——
+只有语义检索能落到正确的页上。
 
 ## 关于 MCP
 
@@ -166,22 +168,22 @@ run_python(
 「解析文件 → 查库现状 → 算差集 → 批量写入」能在一次调用里闭环，
 **数据不经过对话上下文**。
 
-**唯一需要自建 MCP 的是内省层**，因为内置工具有三处读不到 —— 而这三项实测都踩过：
+**唯一需要自建 MCP 的是内省层**，因为内置工具有三处读不到：
 
-| 缺口 | agent 的实际表现 | MCP 工具 |
-|---|---|---|
-| 边的元数据 | 读不到，只能标「查不了」 | `wiki_edges()` |
-| 索引时间戳 | 读不到，误报过索引卡住 | `wiki_index_status()` |
-| `kg_search` 的 3 条边上限 | 枢纽页被截断 | `wiki_edges("Agent Card")` 拿到全部 8 条 |
+| 缺口 | MCP 工具 |
+|---|---|
+| 边的元数据 | `wiki_edges()` |
+| 索引时间戳（判断索引是否滞后） | `wiki_index_status()` |
+| `kg_search` 的 3 条边上限（枢纽页被截断） | `wiki_edges("<页名>")` 拿全量 |
 
-实测收益：token 从约 7900 降到 2080（只算中间过程 6700 → 880），耗时 14 ms。
+把校验收进一次工具调用，比让 agent 现场写代码逐页查更省 token、也更稳定。
 
 **内省层坚持只读** —— 校验只读取状态，从不写入。写操作一律走 `kg_add` / `file_write`，
 让 Quick 自己维护索引和计量。四个工具不执行外部命令、不联网、SQL 全参数化，
 `vault` 参数限定在注册过的目录内 —— 详见
 [mcp/wiki-inspect/TOOLS.md](mcp/wiki-inspect/TOOLS.md#安全边界)。
 
-## 实测数据
+## 一次完整运行的产出
 
 一次完整运行（11 份素材：Karpathy gist、Bush 1945、MCP 规范、A2A 规范、
 AWS Agent Registry 公告、AgentCore 服务簇/Runtime/Gateway 官方文档等）：
@@ -195,14 +197,6 @@ AWS Agent Registry 公告、AgentCore 服务簇/Runtime/Gateway 官方文档等�
 
 产出全部在 [`examples/`](examples/) 下，可以直接对照。
 
-三处值得看的行为：
-
-- **已有页被更新，不是复制成重名页** —— `Model Context Protocol` 从
-  `status: developing` 升到 `stable`、补上协议本体，同时保留了原有的关联
-- **没有硬造关联** —— 前两份素材主题正交（知识管理 vs agent 治理），
-  跨簇边只有 2 条，都在真实交集处
-- **同一条规则的两种相反执行** —— 「复述已有内容不归档、跨页综合才归档」
-  让它一次主动写了 synthesis、一次明确说不建页
 
 ## 已知限制
 
@@ -211,8 +205,8 @@ AWS Agent Registry 公告、AgentCore 服务簇/Runtime/Gateway 官方文档等�
   所以写页后要显式触发索引
 - **多端不同步索引** —— Quick 的本地文件夹索引每端各自建。多端场景把 markdown
   放进云盘，各端指向同一目录、各自索引一遍
-- **`special_instructions` 是软约束** —— 抽取器不保证遵守，见
-  [docs/why-not-kg-extraction.md](docs/why-not-kg-extraction.md)
+- **KG 抽取的 `special_instructions` 是软约束** —— 若自行开启 KG，抽取器不保证
+  遵守你写的规则，产出需要人工校正
 
 ## 目录说明
 
@@ -226,15 +220,13 @@ llm-wiki-on-quick/
 ├── mcp/wiki-inspect/
 │   ├── server.py              4 个只读工具
 │   ├── INSTALL.md             安装 + 排查
-│   ├── TOOLS.md               工具说明 + 实测收益
+│   ├── TOOLS.md               工具说明
 │   └── import-wiki-inspect.json
 ├── skill/quick-wiki-ops/      Claude Code 用
 │   ├── SKILL.md               操作手册：工具分工、豁免清单、避坑
 │   └── scripts/quick_wiki_lint.py
 ├── examples/                  一次真实运行的 62 页产出
 └── docs/
-    ├── why-not-kg-extraction.md   三组实测对照
-    ├── extraction-rules.md        想自己验抽取器时用
     ├── sync-task-prompt.md        定时任务 prompt
     └── images/architecture.*      架构图（含 .drawio 源）
 ```

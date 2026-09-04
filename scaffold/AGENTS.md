@@ -221,19 +221,19 @@ summary: AWS 托管的容器运行时环境，把 agent 和 MCP server 跑在容
 
 `kg_folder_rebuild` 会**删掉这个文件夹的全部实体再重抽**，而边有外键级联 —— 节点一删，你灌的 `linksTo` 边跟着全没。所以 rebuild 是破坏性操作。
 
-更要紧的是：**抽取规则（`special_instructions`）是软约束，抽取器不保证遵守。** 实测一次 rebuild 后同时出现四类偏差：
+更要紧的是：**抽取规则（`special_instructions`）是软约束，抽取器不保证遵守。** rebuild 后可能出现四类偏差：
 
-- 23 个文件只产出 21 个实体，两页完全没抽到
-- `concepts/LLM Wiki.md` 被命名成 `LLM Wiki 模式`，和 source 页撞名
-- category 出现 `Product` / `CreativeWork`，不是 frontmatter 的 `type`
-- summary 被换成了正文里某个段落，不是 frontmatter 的 `summary`
+- 部分文件完全没产出实体
+- 实体名不等于文件名（可能和别的页撞名）
+- category 不是 frontmatter 的 `type`
+- summary 被正文段落顶替，不是 frontmatter 的 `summary`
 
 所以 rebuild 前后要走一套**确定性校正**，全部用 `run_python` 做（纯代码，不靠判断）：
 
 **rebuild 之前**
 
 1. 从文件解析全部 wikilink，**按页名**记录（不要记 node_id —— rebuild 后 id 全变）
-2. 报告一遍：多少页、多少条边、有无死链。这是之后的对照基线
+2. 报告一遍：多少页、多少条边、有无死链。这是 rebuild 之后的比对基线
 
 **rebuild 之后**
 
@@ -247,7 +247,7 @@ summary: AWS 托管的容器运行时环境，把 agent 和 MCP server 跑在容
 
 **报告时要给出：** 修正了几处名字、几处 category、几处 summary、有几个文件没产出实体、边数是否恢复。不要只说「已完成」。
 
-**成本提醒**：抽取要花 token（实测 23 页约 8.7 万）。rebuild 不是免费操作，不要主动建议做，除非我明确要求或抽取规则刚改过。
+**成本提醒**：抽取按内容量计费，几十页的 wiki 一次 rebuild 是数万 token 级别。不是免费操作，不要主动建议做，除非我明确要求或抽取规则刚改过。
 
 ## 硬规则
 
