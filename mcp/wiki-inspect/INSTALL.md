@@ -175,3 +175,8 @@ Quick 里注册成文件夹。先做 `SETUP.md` 的 Step 2。
 
 **首次调用慢** —— `uv run --with fastmcp` 第一次要下载 fastmcp，之后有缓存就快了。
 配置里的 `UV_HTTP_TIMEOUT: 120` 就是给这一次留的余量。
+
+**报 `Failed to spawn: ~/.quickwork/... No such file or directory`** —— 配置里的 `~`
+没被展开。`args` 是直接 spawn 进程、不过 shell 的，波浪号得由客户端展开。
+Quick 会展开，所以在 Quick 里写 `~` 没问题；换成别的 MCP 客户端撞到这个错，
+把那一项改成绝对路径（`echo $HOME` 看你的用户目录）。
