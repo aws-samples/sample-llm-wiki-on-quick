@@ -7,6 +7,9 @@ summary: Karpathy 提出的 LLM Wiki 模式原文摘要——用 LLM 增量维�
 # LLM Wiki (Karpathy)
 
 > 忠实转述 `raw/articles/llm-wiki-karpathy.md`，不加解读。解读见 [[LLM Wiki]] 及相关 concept 页。
+>
+> 来源: https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
+> 下载日期: 2026-09-02。原文 75 行，全文转述（无节选）。
 
 原文副标题：*A pattern for building personal knowledge bases using LLMs.*
 
