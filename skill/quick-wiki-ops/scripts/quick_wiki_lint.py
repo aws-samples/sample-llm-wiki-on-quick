@@ -52,6 +52,52 @@ def parse_links(text: str) -> list[str]:
     return [m.rstrip("\\").strip() for m in WIKILINK_RE.findall(text)]
 
 
+# ---------- SQL ----------
+#
+# 全部是常量，没有一处把外部数据拼进来。用三引号而不是隐式字符串拼接，
+# 是为了让「这是一整条 SQL」在语法上就明确。
+
+SQL_FOLDERS = """
+    SELECT id, path, agent_allowed, rag_enabled, embed_mode, kg_enabled,
+           rag_status, kg_status
+    FROM folders WHERE path LIKE ? ORDER BY id
+"""
+
+SQL_FOLDER_PATHS = "SELECT path FROM folders"
+
+# search_content.text_content 存的是「name + 空格 + summary」拼接
+SQL_ENTITIES = """
+    SELECT n.id, n.node_id, n.category, n.source, n.source_type, s.text_content
+    FROM nodes n JOIN search_content s ON s.node = n.id
+    WHERE n.node_class = 'entity'
+"""
+
+SQL_EDGES = """
+    SELECT e.id, e.relation, e.source, e.properties,
+           sf.text_content AS from_text, st.text_content AS to_text
+    FROM edges e
+    JOIN search_content sf ON sf.node = e.from_node
+    JOIN search_content st ON st.node = e.to_node
+"""
+
+_SQL_FILES = """
+    SELECT name, path, folder_id, rag_index_time, kg_index_time, modified_at
+    FROM files WHERE folder_id IN (__IDS__)
+"""
+
+
+def files_sql(n: int) -> str:
+    """把 IN (__IDS__) 展开成 n 个 ? 占位符。
+
+    DB-API 不支持给 IN 绑定序列，占位符个数只能由代码生成。**插进 SQL 的
+    只有 ? 本身**（个数来自 len()），实际值仍走参数绑定 —— 没有任何外部
+    数据进入 SQL 文本。
+    """
+    if n < 1:
+        raise ValueError("n must be >= 1")
+    return _SQL_FILES.replace("__IDS__", ",".join("?" * n))
+
+
 # ---------- 数据采集 ----------
 
 def _deny_attach(action: int, _a1, _a2, _db, _trigger) -> int:
@@ -89,7 +135,7 @@ def find_db(vault: Path) -> Path | None:
         try:
             conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
             conn.set_authorizer(_deny_attach)
-            rows = conn.execute("SELECT path FROM folders").fetchall()
+            rows = conn.execute(SQL_FOLDER_PATHS).fetchall()
             conn.close()
             if any(within(r[0], vault) for r in rows):
                 return Path(path)
@@ -135,43 +181,21 @@ def read_db(db: Path, vault: Path) -> dict:
     conn.row_factory = sqlite3.Row
     out: dict = {"entities": [], "edges": [], "files": [], "folders": []}
 
-    out["folders"] = [dict(r) for r in conn.execute(
-        "SELECT id,path,agent_allowed,rag_enabled,embed_mode,kg_enabled,"
-        "rag_status,kg_status FROM folders WHERE path LIKE ? ORDER BY id",
-        (f"{vault}%",))]
+    out["folders"] = [dict(r)
+                      for r in conn.execute(SQL_FOLDERS, (f"{vault}%",))]
 
-    # 实体：search_content.text_content 存 "name + 空格 + summary" 拼接
-    #
-    # ⚠️ source 字段按建节点的路径不同而不同，不能用它筛：
+    # 实体的 source 字段按建节点的路径不同而不同，不能用它筛：
     #   - kg_add 建的      → source='kg_agent'（工具标识，不是路径）
     #   - 抽取管线产的      → source=<注册的文件夹路径>
     #   - 其它来源（网页等）→ source='generated_processor' / 'other'
     # 所以取全部 entity，靠「名字能否匹配上本 vault 的文件」来归属。
-    for r in conn.execute(
-        "SELECT n.id, n.node_id, n.category, n.source, n.source_type, "
-        "  s.text_content "
-        "FROM nodes n JOIN search_content s ON s.node = n.id "
-        "WHERE n.node_class='entity'"
-    ):
-        out["entities"].append(dict(r))
-
-    for r in conn.execute(
-        "SELECT e.id, e.relation, e.source, e.properties, "
-        "  sf.text_content AS from_text, st.text_content AS to_text "
-        "FROM edges e "
-        "JOIN search_content sf ON sf.node = e.from_node "
-        "JOIN search_content st ON st.node = e.to_node"
-    ):
-        out["edges"].append(dict(r))
+    out["entities"] = [dict(r) for r in conn.execute(SQL_ENTITIES)]
+    out["edges"] = [dict(r) for r in conn.execute(SQL_EDGES)]
 
     folder_ids = [f["id"] for f in out["folders"]]
     if folder_ids:
-        qs = ",".join("?" * len(folder_ids))
-        for r in conn.execute(
-            f"SELECT name, path, folder_id, rag_index_time, kg_index_time, modified_at "
-            f"FROM files WHERE folder_id IN ({qs})", folder_ids,
-        ):
-            out["files"].append(dict(r))
+        out["files"] = [dict(r) for r in conn.execute(
+            files_sql(len(folder_ids)), folder_ids)]
 
     conn.close()
     return out

@@ -44,6 +44,62 @@ WIKILINK_RE = re.compile(r"\[\[([^\]|#]+)")
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---", re.S)
 
 
+# ---------- SQL ----------
+#
+# 全部是常量，没有一处把外部数据拼进来。用三引号而不是隐式字符串拼接，
+# 是为了让「这是一整条 SQL」在语法上就明确 —— 相邻字符串字面量容易和
+# 「漏了逗号的列表」混淆。
+
+SQL_FOLDER_PATHS = "SELECT path FROM folders"
+
+SQL_ENTITIES = """
+    SELECT n.id, n.node_id, n.category, n.source, n.source_type, s.text_content
+    FROM nodes n JOIN search_content s ON s.node = n.id
+    WHERE n.node_class = 'entity'
+"""
+
+SQL_EDGES_PLAIN = "SELECT e.id, e.relation, e.source, e.properties FROM edges e"
+
+SQL_EDGES_NAMED = """
+    SELECT e.id, e.relation, e.source, e.properties,
+           sf.text_content ft, st.text_content tt
+    FROM edges e
+    JOIN search_content sf ON sf.node = e.from_node
+    JOIN search_content st ON st.node = e.to_node
+    ORDER BY e.id
+"""
+
+SQL_FOLDERS_LINT = """
+    SELECT id, path, agent_allowed, rag_enabled, embed_mode, kg_enabled,
+           rag_status, kg_status, file_count, chunk_count
+    FROM folders WHERE path LIKE ? ORDER BY id
+"""
+
+SQL_FOLDERS_STATUS = """
+    SELECT id, path, agent_allowed, rag_enabled, embed_mode, kg_enabled,
+           rag_status, kg_status, file_count, chunk_count,
+           rag_index_time, kg_tokens_used
+    FROM folders WHERE path LIKE ? ORDER BY id
+"""
+
+SQL_FILES_BASE = """
+    SELECT name, folder_id, rag_index_time, kg_index_time, modified_at
+    FROM files WHERE folder_id IN (__IDS__)
+"""
+
+
+def _files_sql(template: str, n: int) -> str:
+    """把 IN (__IDS__) 展开成 n 个 ? 占位符。
+
+    DB-API 不支持给 IN 绑定序列，占位符个数只能由代码生成。**插进 SQL 的
+    只有 ? 本身**（个数来自 len()），实际值仍走参数绑定 —— 没有任何外部
+    数据进入 SQL 文本。
+    """
+    if n < 1:
+        raise ValueError("n must be >= 1")
+    return template.replace("__IDS__", ",".join("?" * n))
+
+
 # ---------- 内部工具 ----------
 
 def _parse_links(text: str) -> list[str]:
@@ -86,7 +142,7 @@ def _find_db(vault: Path) -> Optional[Path]:
         try:
             conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
             conn.set_authorizer(_deny_attach)
-            rows = conn.execute("SELECT path FROM folders").fetchall()
+            rows = conn.execute(SQL_FOLDER_PATHS).fetchall()
             conn.close()
             # 要求 vault 自身或其子目录被注册过 —— 不接受「vault 是注册路径的
             # 父目录」这种关系，否则 vault="/" 对任何注册路径都成立
@@ -348,23 +404,13 @@ def wiki_lint(vault: str = DEFAULT_VAULT, brief: bool = False) -> dict:
                 "findings": findings, "folders": []}
 
     conn = _ro(db)
-    entities = [dict(r) for r in conn.execute(
-        "SELECT n.id, n.node_id, n.category, n.source, n.source_type, "
-        "  s.text_content FROM nodes n JOIN search_content s ON s.node = n.id "
-        "WHERE n.node_class='entity'")]
-    edges = [dict(r) for r in conn.execute(
-        "SELECT e.id, e.relation, e.source, e.properties FROM edges e")]
-    folders = [dict(r) for r in conn.execute(
-        "SELECT id, path, agent_allowed, rag_enabled, embed_mode, kg_enabled, "
-        "  rag_status, kg_status, file_count, chunk_count "
-        "FROM folders WHERE path LIKE ? ORDER BY id", (f"{v}%",))]
+    entities = [dict(r) for r in conn.execute(SQL_ENTITIES)]
+    edges = [dict(r) for r in conn.execute(SQL_EDGES_PLAIN)]
+    folders = [dict(r) for r in conn.execute(SQL_FOLDERS_LINT, (f"{v}%",))]
     fids = [f["id"] for f in folders]
     files = []
     if fids:
-        qs = ",".join("?" * len(fids))
-        files = [dict(r) for r in conn.execute(
-            f"SELECT name, folder_id, rag_index_time, kg_index_time, modified_at "
-            f"FROM files WHERE folder_id IN ({qs})", fids)]
+        files = [dict(r) for r in conn.execute(_files_sql(SQL_FILES_BASE, len(fids)), fids)]
     conn.close()
 
     ent_names = {e["id"]: (_entity_name(e["text_content"], all_names)
@@ -515,11 +561,7 @@ def wiki_edges(page: Optional[str] = None, vault: str = DEFAULT_VAULT) -> dict:
     pages = _read_pages(v)
     all_names = set(pages)
     conn = _ro(db)
-    rows = [dict(r) for r in conn.execute(
-        "SELECT e.id, e.relation, e.source, e.properties, "
-        "  sf.text_content ft, st.text_content tt "
-        "FROM edges e JOIN search_content sf ON sf.node = e.from_node "
-        "JOIN search_content st ON st.node = e.to_node ORDER BY e.id")]
+    rows = [dict(r) for r in conn.execute(SQL_EDGES_NAMED)]
     conn.close()
 
     out = []
@@ -566,18 +608,12 @@ def wiki_index_status(vault: str = DEFAULT_VAULT) -> dict:
         return {"ok": False, "error": "找不到注册了此 vault 的 profile 库"}
 
     conn = _ro(db)
-    folders = [dict(r) for r in conn.execute(
-        "SELECT id, path, agent_allowed, rag_enabled, embed_mode, kg_enabled, "
-        "  rag_status, kg_status, file_count, chunk_count, "
-        "  rag_index_time, kg_tokens_used "
-        "FROM folders WHERE path LIKE ? ORDER BY id", (f"{v}%",))]
+    folders = [dict(r) for r in conn.execute(SQL_FOLDERS_STATUS, (f"{v}%",))]
     fids = [f["id"] for f in folders]
     files = []
     if fids:
-        qs = ",".join("?" * len(fids))
         files = [dict(r) for r in conn.execute(
-            f"SELECT name, folder_id, rag_index_time, kg_index_time, modified_at "
-            f"FROM files WHERE folder_id IN ({qs}) ORDER BY name", fids)]
+            _files_sql(SQL_FILES_BASE + " ORDER BY name", len(fids)), fids)]
     conn.close()
 
     def ts(x):
