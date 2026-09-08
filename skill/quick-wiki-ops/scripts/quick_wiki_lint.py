@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """quick_wiki_lint.py — Quick 上 LLM Wiki 的确定性体检
 
 比对两个数据源：vault 里的 markdown 文件 vs Quick 的 SQLite 库。

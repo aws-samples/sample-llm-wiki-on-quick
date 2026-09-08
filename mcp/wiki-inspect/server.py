@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 """wiki-inspect MCP Server — Quick 上 LLM Wiki 的只读内省层。
 
 给 Quick 里的 agent 提供它自己做不到或容易做错的检查：

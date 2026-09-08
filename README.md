@@ -6,6 +6,11 @@
 
 ![架构](docs/images/architecture.png)
 
+> ⚠️ **动手前先读 [SECURITY.md](SECURITY.md)。** 这套方案让 agent 读取你放进
+> `raw/` 的素材（通常来自互联网），并据此写文件、改知识图谱、执行代码。
+> 那份文档说明这条链路的风险和四条控制建议 —— 只摄入可信来源、把 `raw/`
+> 当不可信输入、Agent access 按最小必要给、vault 里不放凭证和敏感数据。
+
 ## 这个仓库提供什么
 
 | 目录 | 内容 |
@@ -57,7 +62,9 @@ cp -R llm-wiki-on-quick/scaffold/ ~/Wiki-Vault/
 
 三条约束：
 
-- **根目录索引全关**，只要 Agent access —— 它给 agent 读写整棵树的权限
+- **根目录索引全关**，只要 Agent access —— 它给 agent 读写整棵树的权限。
+  **只注册 vault 这一棵**，不要把 `~` 或 `~/Documents` 整个交出去
+  （见 [SECURITY.md](SECURITY.md#-agent-access-按最小必要范围给)）
 - **Semantic 是 Keyword 的升级档**，不能单独开 —— 勾 Semantic 前必须先勾 Keyword
 - **KG 不勾** —— 知识图谱**要用**，但不靠 Quick 的自动抽取，由 agent 在写页时用
   `kg_add` 显式灌。wiki 页的实体名、类型、摘要都由 frontmatter 定死了，一文件一实体，
@@ -207,11 +214,16 @@ AWS Agent Registry 公告、AgentCore 服务簇/Runtime/Gateway 官方文档等�
   放进云盘，各端指向同一目录、各自索引一遍
 - **KG 抽取的 `special_instructions` 是软约束** —— 若自行开启 KG，抽取器不保证
   遵守你写的规则，产出需要人工校正
+- **agent 读到的素材正文和你的指令同一条通道** —— 被投毒的素材可以影响 agent 行为。
+  只摄入可信来源，新素材先手动跑一次再交给定时任务，见 [SECURITY.md](SECURITY.md)
+- **vault 里不要放凭证或敏感个人数据** —— agent 读得到，且 `wiki/` 的内容会过云端
+  做 embedding
 
 ## 目录说明
 
 ```
 llm-wiki-on-quick/
+├── SECURITY.md                动手前必读：风险链路 + 四条控制建议
 ├── scaffold/                  cp -R 到 ~/Wiki-Vault/
 │   ├── AGENTS.md              schema 正本
 │   ├── raw/{articles,papers,assets}/
@@ -241,4 +253,5 @@ llm-wiki-on-quick/
 
 ## License
 
-MIT
+MIT-0（MIT No Attribution）—— 可以自由使用、修改、分发，无需保留版权声明。
+详见 [LICENSE](LICENSE)。
