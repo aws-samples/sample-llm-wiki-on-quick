@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="drawio" version="31.3.2">
   <diagram name="LLM Wiki on Quick">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="860" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1360" pageHeight="920" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+
+        <mxCell id="frame" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;strokeWidth=2;dashed=0;" vertex="1" parent="1">
+          <mxGeometry x="16" y="14" width="1310" height="890" as="geometry" />
+        </mxCell>
+        <mxCell id="frametitle" value="LLM Wiki on Amazon Quick" style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontStyle=1;fontColor=#666666;labelBackgroundColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="30" y="18" width="230" height="20" as="geometry" />
+        </mxCell>
 
         <mxCell id="vault" value="~/Wiki-Vault（你的 markdown）" style="swimlane;startSize=34;html=1;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=13;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="40" y="60" width="330" height="600" as="geometry" />
@@ -129,8 +136,8 @@
         <mxCell id="e6" value="⑤ file_write 写回 wiki/&#xa;（写页 → 灌边 → 触发索引）" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.9;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="agent" target="wikidir">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1290" y="820" />
-              <mxPoint x="400" y="820" />
+              <mxPoint x="1290" y="866" />
+              <mxPoint x="400" y="866" />
             </Array>
             <mxPoint as="offset" x="-40" y="0" />
           </mxGeometry>
@@ -139,8 +146,8 @@
         <mxCell id="e7" value="每次会话读 schema" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;dashed=1;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="schema" target="agent">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="205" y="20" />
-              <mxPoint x="1090" y="20" />
+              <mxPoint x="205" y="44" />
+              <mxPoint x="1090" y="44" />
             </Array>
           </mxGeometry>
         </mxCell>
