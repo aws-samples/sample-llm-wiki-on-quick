@@ -29,8 +29,8 @@
 ### 1. 铺骨架
 
 ```bash
-git clone https://github.com/brilliantwf/llm-wiki-on-quick.git
-cp -R llm-wiki-on-quick/scaffold/ ~/Wiki-Vault/
+git clone https://github.com/aws-samples/sample-llm-wiki-on-quick.git
+cp -R sample-llm-wiki-on-quick/scaffold/ ~/Wiki-Vault/
 ```
 
 ```
@@ -222,7 +222,7 @@ AWS Agent Registry 公告、AgentCore 服务簇/Runtime/Gateway 官方文档等�
 ## 目录说明
 
 ```
-llm-wiki-on-quick/
+sample-llm-wiki-on-quick/
 ├── SECURITY.md                动手前必读：风险链路 + 四条控制建议
 ├── scaffold/                  cp -R 到 ~/Wiki-Vault/
 │   ├── AGENTS.md              schema 正本
@@ -250,6 +250,17 @@ llm-wiki-on-quick/
 - [Amazon Quick on desktop](https://docs.aws.amazon.com/quick/latest/userguide/amazon-quick-desktop.html)
 - [Connectors（桌面端）](https://docs.aws.amazon.com/quick/latest/userguide/connections-desktop.html)
 - [Skills and agents（桌面端）](https://docs.aws.amazon.com/quick/latest/userguide/skills-and-agents-desktop.html)
+
+## Security
+
+动手前请先读 [SECURITY.md](SECURITY.md) —— 这套方案让 agent 读取你放进 `raw/` 的
+素材并据此写文件、改知识图谱、执行代码，那份文档说明风险链路和四条控制建议。
+
+漏洞报告见 [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications)。
+
+## Contributing
+
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## License
 
