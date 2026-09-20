@@ -7,7 +7,7 @@
 | 内容页 | 62（31 concepts / 17 entities / 11 sources / 3 synthesis） |
 | `linksTo` 边 | 316 |
 | 死链 | 0 |
-| lint | 12 项全绿 |
+| lint | 9 项全绿 |
 
 **素材来源**（都是官方原文，非二次加工）：
 

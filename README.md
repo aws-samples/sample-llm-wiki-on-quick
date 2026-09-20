@@ -183,7 +183,7 @@ ingest raw/articles/<文件名>
 Lint 有两条路，各管一半：
 
 ```bash
-# 确定性校验（12 项）—— 脚本或 MCP
+# 确定性校验（9 项）—— 脚本或 MCP
 python3 skill/quick-wiki-ops/scripts/quick_wiki_lint.py
 python3 skill/quick-wiki-ops/scripts/quick_wiki_lint.py --strict   # 有问题退出码 1
 ```
@@ -253,7 +253,7 @@ AWS Agent Registry 公告、AgentCore 服务簇/Runtime/Gateway 官方文档等�
 | 内容页 | **62** |
 | `linksTo` 边 | **316** |
 | 死链 | **0** |
-| lint | 12 项全绿 |
+| lint | 9 项全绿 |
 
 产出全部在 [`examples/`](examples/) 下，可以直接对照。
 

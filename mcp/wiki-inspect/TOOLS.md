@@ -32,7 +32,7 @@ vault 有关的表都是 0 行 —— 唯一还读本机库的是权限层（`al
 wiki_lint(vault="~/Wiki-Vault", brief=False)
 ```
 
-7 项确定性检查，全部从 `.md` 解析：
+9 项确定性检查，全部从 `.md` 解析（编号沿用历史序号，不连续）：
 
 | # | 检查 | 级别 |
 |---|---|---|
@@ -41,8 +41,10 @@ wiki_lint(vault="~/Wiki-Vault", brief=False)
 | 3 | frontmatter 完整性 —— `type` / `tags` / `status` / `summary` 缺没缺 | warn |
 | 4 | `index.md` 一致性 —— 盘上的页和目录登记的对不对得上 | warn |
 | 9 | `type` 取值 —— 是四类之一，且和所在子目录对应（`concept` → `concepts/`） | warn |
+| 10 | 索引时效 —— 报盘上 `newest_mtime`；**另一半要你用 `file_rag_status` 取 `rag_index_time` 来比** | info |
 | 13 | 文件夹注册 —— 读权限层，没注册报 error | info / error |
 | 14 | 缺页候选 —— 见下 | info |
+| 15 | 枢纽分布 —— 入链排名前几页 | info |
 
 **缺页候选**扫 `raw/` 素材里被结构化列为族成员（表格第一列、列表项粗体开头）
 但 wiki 里没有页的名字。只用结构信号，不用语义猜测 —— 每一项都附出现次数和源文件，
