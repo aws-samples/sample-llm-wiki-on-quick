@@ -92,7 +92,7 @@ JSON 的规则：**项与项之间要有逗号，最后一项后面不能有逗�
       "env": { "UV_HTTP_TIMEOUT": "120" }
     },
     "wiki-inspect": {
-      "description": "Quick 上 LLM Wiki 的只读内省层",
+      "description": "Quick 上 LLM Wiki 的只读校验层",
       "command": "uv",
       "args": [
         "run",

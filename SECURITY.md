@@ -62,8 +62,16 @@ README 的注册表在 vault 根开 Agent access，是为了让 agent 能一次�
 - API key、token、密码、私钥、连接字符串
 - 客户数据、他人的个人信息、受合规约束的内容（PII、PHI、支付卡数据等）
 
-两个原因：agent 读得到它们并可能写进摘要页；`wiki/` 开了 Semantic search，
-**内容会送到云端做 embedding**（见 README「已知限制」）。
+两个原因：agent 读得到它们并可能写进摘要页；**开了 Indexing 的文件夹，文件会全文上传**
+到你账号下的 Quick Space —— 不只是 embedding 向量，是文件本身（见 README
+「[索引在云端意味着什么](README.md#索引在云端意味着什么)」）。
+
+这一条比看起来更要紧：`raw/` 和 `wiki/` 都要开 Indexing 才能检索，
+所以**放进 vault 的东西默认都会上云**。判断标准很简单 —— 你愿不愿意把这个文件
+上传到云端服务？不愿意就别放进 vault。
+
+**即使一个 Indexing 开关都不开也一样。** agent 用 `kg_add` 灌图谱时，页名和摘要
+写的是云端图谱（本机数据库里查不到）。所以「不开索引 = 数据不出本机」不成立。
 
 如果不小心放进去了：删文件不够 —— 还要删掉 agent 写出的所有引用它的页面，
 并在 Quick 里重建索引。

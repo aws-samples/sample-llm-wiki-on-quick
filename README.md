@@ -18,7 +18,7 @@
 | **`scaffold/`** | 目录骨架 + `AGENTS.md`（schema 层：约定 + 三个操作 + 校验规程），`cp -R` 就能用 |
 | **`agent/`** | 把 `AGENTS.md` 做成常驻 Quick agent 的完整说明 |
 | **`mcp/wiki-inspect/`** | 只读内省 MCP：4 个工具补上 Quick 内置工具读不到的三处 |
-| **`skill/quick-wiki-ops/`** | Claude Code 的操作手册 + 独立校验脚本（12 项确定性检查） |
+| **`skill/quick-wiki-ops/`** | Claude Code 的操作手册 + 独立校验脚本（与 `wiki_lint` 同一套确定性检查） |
 | **`examples/`** | 一次真实运行的完整产出：62 页 / 316 条边 / 零死链 |
 | **`docs/`** | 抽取规则模板、定时任务 prompt、架构图源文件 |
 
@@ -47,29 +47,82 @@ cp -R sample-llm-wiki-on-quick/scaffold/ ~/Wiki-Vault/
     └── synthesis/         解读、对比、问答归档
 ```
 
-### 2. 注册三个文件夹
+### 2. 注册文件夹
 
 **Settings → Capabilities → My Computer → Local Folders → Add folder**
 
-| # | 路径 | Agent access | Keyword | Semantic | KG |
-|---|---|---|---|---|---|
-| 1 | `~/Wiki-Vault` | ✓ 锁定开 | ✗ | ✗ | ✗ |
-| 2 | `~/Wiki-Vault/raw` | ✓ 锁定开 | **✓** | ✗ | ✗ |
-| 3 | `~/Wiki-Vault/wiki` | ✓ 锁定开 | **✓** | **✓** | ✗ |
+| # | 路径 | Agent access | Allow full file context | Always remember |
+|---|---|---|---|---|
+| 1 | `~/Wiki-Vault` | **✓** | ✗ | ✗ |
+| 2 | `~/Wiki-Vault/raw` | ✓ | **✓** | ✗ |
+| 3 | `~/Wiki-Vault/wiki` | ✓ | **✓** | ✗ |
 
-**顺序有讲究**：先注册根（索引全关）→ 再加 `raw` 和 `wiki`。反过来会被拒
-（`Cannot enable indexing: subfolder X is already indexed`）。
+`Indexing` 下的两个开关，作用不同：
 
-三条约束：
+| 开关 | 作用 | 建议 |
+|---|---|---|
+| **Allow full file context for enhanced searching** | 建关键词 + 语义索引 | **开** |
+| **Always remember file information** | 自动抽取实体和边进知识图谱 | **不开**（见下） |
 
-- **根目录索引全关**，只要 Agent access —— 它给 agent 读写整棵树的权限。
+**添加文件夹 ≠ 建索引。** 只添加只授予 agent 读写权限，索引是独立的第二步 ——
+不开 Indexing，`file_rag_search` 会直接报「folder is not indexed」。
+
+**第二个开关不开。** 知识图谱**要用**，但不靠自动抽取 —— 由 agent 在写页时用 `kg_add`
+显式灌。wiki 页的实体名、类型、摘要都由 frontmatter 定死了，一文件一实体；
+自动抽取会把正文里的普通术语也抽成 `Defined Term` 节点（实测：一段讲负载均衡的填充
+文字产出了「缓存层」「限流器」「对象存储」等碎片节点），把已经清晰的结构搅乱。
+
+不开这个开关不影响 `kg_add` —— 它和文件夹抽取是两套独立管线，哪怕抽取一次都没跑，
+图也是完整可用的。**但 `kg_add` 写的是云端图谱**（实测：灌一个节点后本机数据库里
+查不到，`kg_search` 立刻命中）—— 这个开关控制的是「文件全文要不要上传 + 要不要自动
+抽取」，不是「数据留不留在本机」。
+
+**索引在云端，文件会上传。** 开 Indexing 等于把该文件夹的文件**全文上传**到你账号下的
+Quick Space，索引建在云端而不是本机。上传→可检索约 **1 分钟**（实测 20 个文件
+平均 68s）。这带来的取舍见下方「[索引在云端意味着什么](#索引在云端意味着什么)」，
+安全影响见 [SECURITY.md](SECURITY.md#-vault-里不放凭证和敏感个人数据)。
+
+两条约束：
+
+- **根目录只给 Agent access，不开 Indexing** —— agent 需要读写整棵树的权限，
+  但索引按子目录分别建，根上再开一层是重复上传。
   **只注册 vault 这一棵**，不要把 `~` 或 `~/Documents` 整个交出去
   （见 [SECURITY.md](SECURITY.md#-agent-access-按最小必要范围给)）
-- **Semantic 是 Keyword 的升级档**，不能单独开 —— 勾 Semantic 前必须先勾 Keyword
-- **KG 不勾** —— 知识图谱**要用**，但不靠 Quick 的自动抽取，由 agent 在写页时用
-  `kg_add` 显式灌。wiki 页的实体名、类型、摘要都由 frontmatter 定死了，一文件一实体，
-  自动抽取只会额外产出正文术语的碎片节点，把已经清晰的结构搅乱。
-  关掉开关不影响已有的图 —— 它只管扫描时要不要自动抽取
+- **同一棵树上父子目录不能都开 Indexing** —— 会被拒
+  （`Cannot enable indexing: subfolder X is already indexed`）。先注册根（不开索引），
+  再加 `raw` 和 `wiki`
+
+#### 索引在云端意味着什么
+
+三项检索能力都在，实测确认：关键词命中唯一词、语义检索在字面零重叠时命中正确文件、
+`kg_search` 读得到抽取出的实体。**LLM Wiki 的三个操作都能正常跑。**
+
+需要知道的四点：
+
+| | |
+|---|---|
+| **同一 Space 内跨文件夹召回** | 语义检索会召回同一个 Quick Space 里**其它文件夹**的相关段落。想要检索范围互不干扰，就别把无关的文件夹注册进来 |
+| **索引状态本地查不到** | 文件、chunk、实体、`kg_add` 灌的节点和边**全在云端**，本机数据库里没有副本。索引进度用 `file_rag_status` 查，图谱用 `kg_search` 查 |
+| **`index_directory` 工具用不上** | 它跑在云端后端，看不到你设备上的本地路径，直接调会报 `Directory not found`。索引由 Quick 客户端的文件同步管道自动建立，不需要手工触发 |
+| **删本地文件会同步删云端副本** | 不用额外清理 |
+
+#### `wiki-inspect` 查文件层，`kg_search` 查图谱层
+
+因为索引和图谱都在云端，`wiki-inspect` 的四个工具**全部从 `.md` 解析**，
+本机只读一个库 —— `allowed_folders.db`（权限层，判断文件夹注册状态）。
+分工是这样：
+
+| 层 | 查什么 | 用什么 |
+|---|---|---|
+| **文件层** | 死链、孤儿页、frontmatter、`index.md` 一致性、`type` 有没有放对目录、缺页候选、枢纽分布、准确边数 | `wiki_lint` / `wiki_hubs` / `wiki_edges` |
+| **注册层** | 文件夹注册了没、agent 有没有读写权限、`sync_status` 同步完没 | `wiki_index_status`（读 `allowed_folders.db`） |
+| **图谱层** | 实体在图谱里有没有节点、`kg_add` 灌的边写进去没 | **`kg_search`** —— 在 Quick 里查，本机查不了 |
+| **索引层** | 索引建到哪一步、什么时候建的、chunk 数 | **`file_rag_status`** —— 同上 |
+
+> **数边有两种口径。** `wiki_lint` / `wiki_hubs` / `wiki_edges` 报的 `total_edges`
+> 是**按 `(from, to)` 去重后**的唯一有向边数，且解析前剥掉了代码块（讲双链语法的页里
+> `` `[[...]]` `` 不算链接）。自己按 `[[` 硬数出来的会更大 —— 那是含重复、含代码块
+> 示例的原始 wikilink 数。三个工具的数字应该完全一致，不一致就说明有 bug。
 
 ### 3. 建 Quick agent
 
@@ -207,13 +260,16 @@ AWS Agent Registry 公告、AgentCore 服务簇/Runtime/Gateway 官方文档等�
 
 ## 已知限制
 
-- **内容要过云端做 embedding** —— 合规上要求笔记不出本机的话，这套方案不适用
-- **索引不是实时的** —— 按 `Scan interval` 定时扫描（默认 30 分钟）。
-  所以写页后要显式触发索引
-- **多端不同步索引** —— Quick 的本地文件夹索引每端各自建。多端场景把 markdown
-  放进云盘，各端指向同一目录、各自索引一遍
-- **KG 抽取的 `special_instructions` 是软约束** —— 若自行开启 KG，抽取器不保证
-  遵守你写的规则，产出需要人工校正
+- **文件要全文上传云端** —— 开 Indexing 就等于把该文件夹的文件传到你账号下的
+  Quick Space，索引建在云端。合规上要求笔记不出本机的话，这套方案不适用
+- **索引不是实时的** —— 按 `Scan interval` 定时扫描（默认 30 分钟）；扫到后
+  上传→可检索还要约 1 分钟。所以写页后要显式触发索引
+- **`wiki-inspect` 查不了图谱层** —— 索引和图谱都在云端，本机没有副本，所以这套工具
+  全部改成从 `.md` 解析：死链、孤儿页、frontmatter、`index.md` 一致性、`type` 目录、
+  缺页候选、枢纽分布、准确边数都能查；**实体在图谱里有没有节点、边有没有灌进去**
+  只能在 Quick 里用 `kg_search` 核，索引进度用 `file_rag_status`
+- **KG 抽取的 `special_instructions` 是软约束** —— 若自行开启 `Always remember`，
+  抽取器不保证遵守你写的规则，产出需要人工校正
 - **agent 读到的素材正文和你的指令同一条通道** —— 被投毒的素材可以影响 agent 行为。
   只摄入可信来源，新素材先手动跑一次再交给定时任务，见 [SECURITY.md](SECURITY.md)
 - **vault 里不要放凭证或敏感个人数据** —— agent 读得到，且 `wiki/` 的内容会过云端

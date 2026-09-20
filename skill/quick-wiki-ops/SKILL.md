@@ -26,23 +26,24 @@ markdown 文件在 `~/Wiki-Vault` → Quick 桌面端建两套索引（全文 + 
 | 层 | 目录 | 谁写 | 索引配置 |
 |---|---|---|---|
 | schema | `AGENTS.md` | 人 | ❌ 不索引（靠 Agent access 直读） |
-| 原料层 | `raw/{articles,papers,assets}/` | 人 | ✅ 只勾 Keyword |
-| 编译层 | `wiki/{concepts,entities,sources,synthesis}/` | agent | ✅ Keyword + Semantic |
+| 原料层 | `raw/{articles,papers,assets}/` | 人 | ✅ 开 Indexing |
+| 编译层 | `wiki/{concepts,entities,sources,synthesis}/` | agent | ✅ 开 Indexing |
 | 特殊文件 | `wiki/index.md`、`wiki/log.md` | agent | ✅ 同上（在 `wiki/` 那行覆盖内） |
 
 ## 文件夹注册（三行，Settings → Capabilities → My Computer → Local Folders）
 
-| # | 路径 | Agent access | Keyword | Semantic | KG |
-|---|---|---|---|---|---|
-| 1 | `~/Wiki-Vault` | ✓ 锁定 | ✗ | ✗ | ✗ |
-| 2 | `~/Wiki-Vault/raw` | ✓ 锁定 | ✓ | ✗ | ✗ |
-| 3 | `~/Wiki-Vault/wiki` | ✓ 锁定 | ✓ | ✓ | ✗ |
+| # | 路径 | Agent access | Allow full file context | Always remember |
+|---|---|---|---|---|
+| 1 | `~/Wiki-Vault` | ✓ | ✗ | ✗ |
+| 2 | `~/Wiki-Vault/raw` | ✓ | ✓ | ✗ |
+| 3 | `~/Wiki-Vault/wiki` | ✓ | ✓ | ✗ |
 
-**KG 一列不勾**，原因见「为什么不用自动抽取」。三条约束：
+**`Always remember file information` 不开**，原因见「为什么不用自动抽取」。四条约束：
 
-- 顺序：先注册根（全关）→ 再加子目录。反过来会被拒（`Cannot enable indexing: subfolder X is already indexed`）
-- Semantic 是 Keyword 的升级档，不能单独开 —— 勾它前必须先勾 Keyword
-- Agent access 是索引前置条件，索引开着时它锁死不让关
+- **添加文件夹 ≠ 建索引** —— 只添加只给 Agent access，索引要单独开 `Indexing`
+- 顺序：先注册根（不开索引）→ 再加子目录。同一棵树上父子不能都开索引，反过来会被拒（`Cannot enable indexing: subfolder X is already indexed`）
+- **索引在云端** —— 开 Indexing 等于文件全文上传到 Quick Space，上传→可检索约 1 分钟。本机 `files` / chunk 表不会有记录
+- `index_directory` 工具跑在云端后端、看不到设备本地路径（报 `Directory not found`）；索引由 Quick 客户端自动建，不用手工触发
 
 ## 工具分工（别混用）
 
@@ -51,7 +52,7 @@ markdown 文件在 `~/Wiki-Vault` → Quick 桌面端建两套索引（全文 + 
 | 按意思找内容 | `file_rag_search(query, folder_path)` | `kg_search(semantic)` 只检索实体的**那一句** summary |
 | 按页面类型筛 | `kg_search(category="Concept")`，支持多值 | `folder_path` 存注册路径，`wiki/` 一行，区分不了类型 |
 | 查反向链接 | 全文检索 `[[X]]` 字面量 | `kg_search` 的 edges 有 **3 条上限**，枢纽页会被截断 |
-| 灌边 / 建节点 | `kg_add(from_id, to_id)` | 名字解析是模糊的，必须用 id |
+| 灌边 / 建节点 | `kg_add(from_id, to_id)` | 名字解析是模糊的，必须用 id；**补欠账时按源文件分批（每批 10~15 页），别一次灌几十页 —— 前端面板大批量加载有上限** |
 | 批量解析 + 比对 | `run_python(code, tools=[...])` | 不传 `tools` 这些函数不在命名空间，报 `NameError` |
 | 全量边 / 索引时间戳 | `wiki-inspect` MCP 或 lint 脚本 | 内置工具拿不到 |
 
@@ -76,25 +77,31 @@ python3 ~/.claude/skills/quick-wiki-ops/scripts/quick_wiki_lint.py --json     # 
 它比让 agent 现场写代码可靠 —— 逻辑固定、结果可复现。
 **查询 bug 比数据故障常见得多**，所以异常数字先怀疑查询写错。
 
-### 检查清单（脚本覆盖 ✅ / 需人判断 👤）
+### 检查清单
 
-| # | 项 | |
+脚本只查文件层 —— 索引和图谱在云端 Quick Space，本机没有副本。三组：
+
+| # | 项 | 谁查 |
 |---|---|---|
-| 1 | 死链：`[[X]]` 指向不存在的文件 | ✅ |
-| 2 | 孤儿页：零入链（**按豁免清单过滤**） | ✅ |
-| 3 | frontmatter 四字段完整性 | ✅ |
-| 4 | `index.md` ↔ 实际文件一致 | ✅ |
-| 5 | 边一致性：文件 wikilink 数 == 库里 `linksTo` 数 | ✅ |
-| 6 | 文件↔实体完整性：每个 `.md` 是否都有实体 | ✅ |
-| 7 | 实体名污染：name 是否等于文件名去 `.md` | ✅ |
-| 8 | 同名实体：多个候选 | ✅ 报出，👤 裁定 |
-| 9 | 索引时效：`rag_index_time` < `modified_at` | ✅ |
-| 10 | 来源不明的 `linksTo`：`reason` 为空 | ✅ |
-| 11 | 矛盾：两页对同一事实说法冲突 | 👤 |
-| 12 | 过期声明 | 👤 |
-| 13 | 缺页：反复提到但没有独立页的概念 | 👤 |
-| 14 | 缺交叉引用：两页明显相关但没互链 | 👤 |
-| 15 | 数据缺口：可联网补上的空白 | 👤 |
+| 1 | 死链：`[[X]]` 指向不存在的文件 | ✅ 脚本 |
+| 2 | 孤儿页：零入链（**按豁免清单过滤**） | ✅ 脚本 |
+| 3 | frontmatter 四字段完整性 | ✅ 脚本 |
+| 4 | `index.md` ↔ 实际文件一致 | ✅ 脚本 |
+| 9 | `type` 取值：是四类之一，且和子目录对应 | ✅ 脚本 |
+| 13 | 文件夹注册 + `sync_status` 是否 synced | ✅ 脚本（读权限层） |
+| 14 | 缺页候选：从 `raw/` 结构里提的名字 | ✅ 脚本给候选，👤 判断 |
+| 15 | 枢纽分布：网状还是星形 | ✅ 脚本 |
+| — | 实体在图谱里有没有节点、边有没有灌进去 | 🔍 `kg_search`（Quick 里） |
+| — | 同名实体：多个候选 | 🔍 `kg_search` 报出，👤 裁定 |
+| — | 索引进度、chunk 数、索引时间戳 | 🔍 `file_rag_status`（Quick 里） |
+| — | 矛盾：两页对同一事实说法冲突 | 👤 |
+| — | 过期声明 | 👤 |
+| — | 缺交叉引用：两页明显相关但没互链 | 👤 |
+| — | 数据缺口：可联网补上的空白 | 👤 |
+
+> **数边只信脚本的数字。** 报的 `total_edges` 是按 `(from, to)` 去重、且剥掉代码块
+> 后的唯一有向边数。自己 `grep '\[\['` 数出来的会更大 —— 那是含重复、含语法示例的
+> 原始 wikilink 数（实测同一 vault：359 原始 → 348 剥代码块 → 187 去重）。
 
 ### 孤儿页豁免清单（这几类正常无入链，忽略）
 
@@ -115,24 +122,32 @@ python3 ~/.claude/skills/quick-wiki-ops/scripts/quick_wiki_lint.py --json     # 
 
 | 现象 | 判定 |
 |---|---|
-| 实体名混进 summary（如 `qmd \| 本地 markdown 搜索引擎…`） | **工程层面** —— 文件 frontmatter 是干净的，是 `kg_add` 拼接时插入的分隔符不一致。只能靠检查项 7 抓 |
-| agent 报告「已触发索引」但实际没发生 | **静默失败** —— 查 `rag_index_time` 是否真的动了（检查项 9） |
-| `entity_count` 与 `nodes` 表实际数量不符 | Quick 的计数器不准，**以 `nodes` 表为准** |
+| 实体名混进 summary（如 `qmd \| 本地 markdown 搜索引擎…`） | **工程层面** —— 文件 frontmatter 是干净的，是 `kg_add` 拼接时插入的分隔符不一致。用 `kg_search` 查页名，看回来的节点名对不对 |
+| agent 报告「已触发索引」但实际没发生 | **静默失败** —— 用 `file_rag_status` 看索引时间戳是否真的动了，别信工具的成功消息 |
+| `kg_search` 某节点只回 3 条边 | **不是只有 3 条** —— 那是接口上限。准确边数用 `wiki_hubs` / `wiki_edges` |
 
-## 为什么不用自动抽取（KG 开关不勾）
+## 为什么不用自动抽取（`Always remember file information` 不开）
 
 抽取器为**非结构化文档**设计（会议记录、邮件），价值在于从正文里发现藏着的实体，挖得越全越好。
 但 wiki 页**没有待发现的东西** —— 实体名 = 文件名，category = frontmatter 的 `type`，
 summary 也已写好。发现能力用在这里就是过度发现。
 
 让 agent 在写页时用 `kg_add` 显式灌，图和文件严格一对一、零 token 开销。
-开自动抽取则会额外产出正文术语的碎片节点，还要花 token 善后。
+开自动抽取则会额外产出正文术语的碎片节点，还要花 token 善后 —— 实测拿一段讲负载均衡、
+消息队列的普通技术文字去跑，抽出了「缓存层」「限流器」「对象存储」「分布式追踪」
+一串 `Defined Term` 节点，它们在 wiki 的结构里没有位置。
 
 `special_instructions` 是**软约束**，抽取器不保证遵守 —— 写规则能减少碎片，但压不干净。
 **不能靠「把规则写得更严」解决，因为出问题的正是规则本身没被遵守。**
 
-**关掉 KG 不影响已有的图** —— 那个开关只管「扫描时要不要自动抽取」，
-图谱面板读的是全库数据，节点和边都还在。
+**不开这个开关不影响 `kg_add` 灌的图。** `kg_add` 显式灌的节点和边照常进去，
+哪怕自动抽取一次都没跑，图在「知识图谱」面板里也是完整可用的。开抽取只是额外多灌
+一批正文术语的碎片节点。
+
+> **灌入方式决定前端能不能渲染（实测）。** 一份份增量灌（每批一份素材、10~15 页），
+> 面板逐簇累积、整张图正常显示；短时间内一次性把几十页全灌完，面板的大批量加载
+> 会出问题（只剩根节点画不出）。所以补历史欠账时**必须按源文件分批**。
+> 「写页即同步」天然是一页一灌，不会踩这个上限。
 
 ## rebuild 后必须校正（只在确实要跑抽取时）
 
