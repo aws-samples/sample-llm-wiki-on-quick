@@ -124,7 +124,33 @@ Quick Space，索引建在云端而不是本机。上传→可检索约 **1 分�
 > `` `[[...]]` `` 不算链接）。自己按 `[[` 硬数出来的会更大 —— 那是含重复、含代码块
 > 示例的原始 wikilink 数。三个工具的数字应该完全一致，不一致就说明有 bug。
 
-### 3. 建 Quick agent
+### 3. 装 wiki-inspect MCP
+
+```bash
+mkdir -p ~/.quickwork/mcp-servers
+cp -R mcp/wiki-inspect ~/.quickwork/mcp-servers/
+```
+
+连带 `import-wiki-inspect.json` 和文档一起过去，导入时路径就在手边。
+
+导入 `~/.quickwork/mcp-servers/wiki-inspect/import-wiki-inspect.json`，或直接改
+`~/.quickwork/profiles/<profile>/mcp_config.json`。
+
+> 这份 JSON **导入后直接可用**，不需要改任何路径 —— 里面的 `~` 由 Python 展开。
+
+重启 Quick 后验证：
+
+```
+跑一次 wiki_lint
+```
+
+⚠️ **一个 JSON 只能放一个 server** —— Quick 的导入器只读 `mcpServers` 的第一个 key。
+详见 [mcp/wiki-inspect/INSTALL.md](mcp/wiki-inspect/INSTALL.md)。
+
+> **为什么排在建 agent 之前** —— `AGENTS.md` 里引用 `wiki_lint` 十几次，
+> 而装 MCP 必须重启 Quick。先装好再建 agent，建完就能立刻验证。
+
+### 4. 建 Quick agent
 
 ```
 建一个 agent，名字叫「LLM Wiki Agent」。
@@ -136,22 +162,14 @@ instructions 用 ~/Wiki-Vault/AGENTS.md 的全文，原样放进去，不要改�
 
 配套字段和完整说明见 [agent/README.md](agent/README.md)。
 
-### 4. 装 wiki-inspect MCP（建议）
-
-```bash
-mkdir -p ~/.quickwork/mcp-servers/wiki-inspect
-cp mcp/wiki-inspect/server.py ~/.quickwork/mcp-servers/wiki-inspect/
-```
-
-导入 `mcp/wiki-inspect/import-wiki-inspect.json`，或直接改
-`~/.quickwork/profiles/<profile>/mcp_config.json`。重启 Quick 后验证：
+MCP 已在上一步装好，建完可以立刻验证整条链路：
 
 ```
 跑一次 wiki_lint
 ```
 
-⚠️ **一个 JSON 只能放一个 server** —— Quick 的导入器只读 `mcpServers` 的第一个 key。
-详见 [mcp/wiki-inspect/INSTALL.md](mcp/wiki-inspect/INSTALL.md)。
+骨架刚铺好、没 ingest 任何素材，这时应报 0 内容页 —— 能正常返回就说明 agent
+认得 MCP 工具、vault 路径也对。
 
 ## 跑起来
 

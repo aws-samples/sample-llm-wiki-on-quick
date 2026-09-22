@@ -1,13 +1,22 @@
 # wiki-inspect 安装步骤
 
-## Step 1 放 server 文件
+## Step 1 拷整个目录过去
 
 ```bash
-mkdir -p ~/.quickwork/mcp-servers/wiki-inspect
-cp server.py ~/.quickwork/mcp-servers/wiki-inspect/
+mkdir -p ~/.quickwork/mcp-servers
+cp -R mcp/wiki-inspect ~/.quickwork/mcp-servers/
 ```
 
+`server.py`、`import-wiki-inspect.json` 和这两份文档都跟着过去，
+下一步导入和之后排查都不用再回仓库找。
+
 ## Step 2 注册到 Quick
+
+> **配置里为什么用 `python -c` 绕一层** —— `args` 数组是直接 spawn 进程、不过 shell 的，
+> `uv run` 自己不展开 `~`，直接写 `~/...server.py` 会报
+> `Failed to spawn: ... No such file or directory`（表现就是 MCP 加载失败）。
+> 交给 Python 的 `os.path.expanduser` 展开，这份配置就任何人导入都能直接用、
+> 不用替换用户名。
 
 两条路：**UI 导入**（省事）或**直接改配置文件**（可靠）。
 
@@ -18,7 +27,7 @@ cp server.py ~/.quickwork/mcp-servers/wiki-inspect/
 导入这个文件：
 
 ```
-mcp/wiki-inspect/import-wiki-inspect.json
+~/.quickwork/mcp-servers/wiki-inspect/import-wiki-inspect.json
 ```
 
 #### ⚠️ 一个文件只能放一个 server
@@ -84,29 +93,17 @@ JSON 的规则：**项与项之间要有逗号，最后一项后面不能有逗�
 加完长这样：
 
 ```json
-{
-  "mcpServers": {
-    "run": {
-      "command": "uv",
-      "args": ["run", "--with", "fastmcp", "..."],
-      "env": { "UV_HTTP_TIMEOUT": "120" }
-    },
-    "wiki-inspect": {
-      "description": "Quick 上 LLM Wiki 的只读校验层",
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "fastmcp",
-        "~/.quickwork/mcp-servers/wiki-inspect/server.py"
-      ],
-      "env": {
-        "UV_HTTP_TIMEOUT": "120"
-      }
-    }
-  }
+"wiki-inspect": {
+  "command": "uv",
+  "args": ["run", "--with", "fastmcp", "python", "-c",
+           "import os,runpy; runpy.run_path(os.path.expanduser(\"~/.quickwork/mcp-servers/wiki-inspect/server.py\"), run_name=\"__main__\")"],
+  "env": { "UV_HTTP_TIMEOUT": "120" }
 }
 ```
+
+> 路径的 `~` 由 Python 的 `os.path.expanduser` 展开，所以这份配置**任何人导入都能直接用**，
+> 不需要替换用户名。（`uv run` 自己不展开 `~`，直接写 `~/...server.py` 会报
+> `Failed to spawn`。）
 
 #### 没有别的 server 时：直接覆盖
 
@@ -177,6 +174,4 @@ Quick 里注册成文件夹。先做 `SETUP.md` 的 Step 2。
 配置里的 `UV_HTTP_TIMEOUT: 120` 就是给这一次留的余量。
 
 **报 `Failed to spawn: ~/.quickwork/... No such file or directory`** —— 配置里的 `~`
-没被展开。`args` 是直接 spawn 进程、不过 shell 的，波浪号得由客户端展开。
-Quick 会展开，所以在 Quick 里写 `~` 没问题；换成别的 MCP 客户端撞到这个错，
-把那一项改成绝对路径（`echo $HOME` 看你的用户目录）。
+没被展开，把 `args` 最后那项改成绝对路径。见 Step 2 开头的说明。

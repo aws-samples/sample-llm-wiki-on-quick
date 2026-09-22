@@ -102,8 +102,8 @@ AgentCore Runtime           入 11  出 7    entity
 **① 放到 Quick 的 mcp-servers 目录**
 
 ```bash
-mkdir -p ~/.quickwork/mcp-servers/wiki-inspect
-cp server.py ~/.quickwork/mcp-servers/wiki-inspect/
+mkdir -p ~/.quickwork/mcp-servers
+cp -R mcp/wiki-inspect ~/.quickwork/mcp-servers/
 ```
 
 **② 注册到 Quick 的 MCP 配置**
@@ -113,13 +113,15 @@ cp server.py ~/.quickwork/mcp-servers/wiki-inspect/
 ```json
 "wiki-inspect": {
   "command": "uv",
-  "args": ["run", "--with", "fastmcp",
-           "~/.quickwork/mcp-servers/wiki-inspect/server.py"],
-  "env": {
-    "UV_HTTP_TIMEOUT": "120"
-  }
+  "args": ["run", "--with", "fastmcp", "python", "-c",
+           "import os,runpy; runpy.run_path(os.path.expanduser(\"~/.quickwork/mcp-servers/wiki-inspect/server.py\"), run_name=\"__main__\")"],
+  "env": { "UV_HTTP_TIMEOUT": "120" }
 }
 ```
+
+> 路径的 `~` 由 Python 的 `os.path.expanduser` 展开，所以这份配置**任何人导入都能直接用**，
+> 不需要替换用户名。（`uv run` 自己不展开 `~`，直接写 `~/...server.py` 会报
+> `Failed to spawn`。）
 
 profile 目录名形如 `enterprise-xxxxxxxx-us-west-2`，看 `~/.quickwork/profiles/` 下
 哪个注册了你的 vault。国内网络装 `fastmcp` 慢的话，可以在 `env` 里加一个

@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import glob
+import logging
 import os
 import re
 import sqlite3
@@ -723,4 +724,9 @@ def wiki_hubs(limit: int = 15, vault: str = DEFAULT_VAULT) -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    # stdio 传输下 stderr 要保持安静：FastMCP 4.x 默认往 stderr 打一大段 ASCII
+    # banner 和 INFO 日志，有些 MCP 客户端会把它当成启动异常 —— 表现为「测试连接
+    # 成功、工具也列得出来，但状态一直 Failed — retrying」。
+    logging.getLogger("FastMCP").setLevel(logging.WARNING)
+    logging.getLogger("fastmcp").setLevel(logging.WARNING)
+    mcp.run(show_banner=False)
