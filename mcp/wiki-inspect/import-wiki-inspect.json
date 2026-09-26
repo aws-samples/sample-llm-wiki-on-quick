@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "wiki-inspect": {
-      "description": "Quick 上 LLM Wiki 的只读校验层：lint / edges / index_status / hubs",
+      "description": "Quick 上 LLM Wiki 的只读校验层：lint / edges / hubs",
       "command": "uv",
       "args": [
         "run",
